@@ -1,346 +1,156 @@
 # PET Domain Model
 
-## 1. Core Entities
+## Storage
 
-The new system should be modeled around these entities:
+Primary operational datastore: SQLite on the PET-owned production server.
 
-```text
-Organization
- ├── Users / Employees
- ├── Schools
- ├── Tasks
- ├── Conversations / Messages
- ├── Field Visits
- ├── Students
- │    ├── Test Registrations
- │    ├── Test Attempts / Results
- │    ├── Evaluations
- │    ├── Documents
- │    ├── Enrollment
- │    └── Activity Timeline
- ├── Website Forms / Enquiries
- ├── Attendance
- ├── Notifications
- └── Audit Logs
-```
+Access pattern:
 
-## 2. User
+Web / Android
+→ HTTPS
+→ Express API
+→ Data Access Layer
+→ SQLite
+
+Large files are stored on the PET server filesystem. SQLite stores metadata and relative file paths.
+
+## Core Entities
+
+- Organization
+- Users / Employees
+- Teams
+- Schools
+- Students
+- Student Status History
+- Student Documents
+- Tasks
+- Task Events
+- Conversations
+- Messages
+- Field Visits
+- Field Media
+- Employee Attendance
+- Tests
+- Test Subjects
+- Test Assignments
+- Test Results
+- Enrollments
+- Website Form Submissions
+- Notifications
+- Audit Logs
+- Sessions
+
+## User
 
 Suggested fields:
 
-```ts
-interface User {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  role: 'main_admin' | 'employee';
-  employeeCode?: string;
-  photoUrl?: string;
-  department?: string;
-  teamId?: string;
-  status: 'active' | 'inactive' | 'archived';
-  joiningDate?: string;
-  createdAt: string;
-  updatedAt?: string;
-}
-```
+id, name, email, phone, role, employeeCode, photoPath, department, teamId, status, joiningDate, mustChangePassword, createdAt, updatedAt.
 
-Do not put plaintext passwords in this model.
+Role values initially:
 
-## 3. School
+main_admin
+employee
 
-```ts
-interface School {
-  id: string;
-  name: string;
-  address?: string;
-  locality?: string;
-  city?: string;
-  district?: string;
-  state?: string;
-  phone?: string;
-  contactPersonName?: string;
-  contactPersonPhone?: string;
-  latitude?: number;
-  longitude?: number;
-  status: 'active' | 'inactive';
-  notes?: string;
-  createdAt: string;
-  updatedAt?: string;
-}
-```
+Passwords exist only as strong server-side password hashes.
 
-## 4. Student
+## School
 
-```ts
-type StudentStatus =
-  | 'registered'
-  | 'test_scheduled'
-  | 'test_completed'
-  | 'under_evaluation'
-  | 'selected'
-  | 'waitlisted'
-  | 'not_selected'
-  | 'enrolled'
-  | 'inactive';
+Suggested fields:
 
-interface Student {
-  id: string;
-  petStudentId: string;
-  name: string;
-  photoUrl?: string;
-  dob?: string;
-  age?: number;
-  gender?: 'Male' | 'Female' | 'Other';
-  studentPhone?: string;
-  parentName: string;
-  parentPhone?: string;
-  parentRelation?: string;
-  schoolId?: string;
-  schoolName: string;
-  schoolAddress?: string;
-  city?: string;
-  district?: string;
-  state?: string;
-  currentClass?: string;
-  previousSchool?: string;
-  address?: string;
-  status: StudentStatus;
-  registeredByUserId: string;
-  registeredByUserName: string;
-  registrationSource: 'field_visit' | 'website' | 'manual' | 'import';
-  registrationDate: string;
-  intakeId?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt?: string;
-}
-```
+id, schoolCode, name, address, locality, city, district, state, phone, contactPersonName, contactPersonPhone, latitude, longitude, status, notes, createdAt, updatedAt.
 
-## 5. Field Visit
+## Student
 
-```ts
-interface FieldVisit {
-  id: string;
-  schoolId: string;
-  schoolName: string;
-  employeeId: string;
-  employeeName: string;
-  purpose: string;
-  status: 'planned' | 'in_progress' | 'completed' | 'cancelled';
-  startedAt?: string;
-  endedAt?: string;
-  startLatitude?: number;
-  startLongitude?: number;
-  endLatitude?: number;
-  endLongitude?: number;
-  studentsContacted?: number;
-  studentsRegistered?: number;
-  documentsCollected?: number;
-  notes?: string;
-  createdAt: string;
-  updatedAt?: string;
-}
-```
+Suggested fields:
 
-Location is optional and must be policy-controlled. Do not implement continuous background tracking unless explicitly required.
+id, petStudentId, name, photoPath, dob, age, gender, studentPhone, parentName, parentPhone, parentRelation, schoolId, schoolName, schoolAddress, locality, city, district, state, currentClass, previousSchool, address, status, registeredByUserId, registeredByUserName, registrationSource, registrationDate, intakeId, notes, createdAt, updatedAt.
 
-## 6. Field Media / Survey
+Student statuses:
 
-```ts
-interface FieldMedia {
-  id: string;
-  visitId: string;
-  uploadedByUserId: string;
-  uploadedByUserName: string;
-  type: 'image' | 'video' | 'document';
-  storageUrl: string;
-  caption?: string;
-  createdAt: string;
-}
-```
+registered
+test_scheduled
+test_completed
+under_evaluation
+selected
+waitlisted
+not_selected
+enrolled
+inactive
 
-## 7. Task
+## Student Status History
 
-```ts
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  createdByUserId: string;
-  createdByUserName: string;
-  assignedToUserId: string;
-  assignedToUserName: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'accepted' | 'in_progress' | 'submitted' | 'completed' | 'cancelled';
-  dueDate?: string;
-  schoolId?: string;
-  studentId?: string;
-  visitId?: string;
-  attachments?: string[];
-  createdAt: string;
-  updatedAt?: string;
-  completedAt?: string;
-}
-```
+Store every lifecycle transition separately.
 
-## 8. Messages
+Fields:
 
-```ts
-interface Conversation {
-  id: string;
-  participantIds: string[];
-  participantNames: string[];
-  lastMessageAt?: string;
-  createdAt: string;
-}
+id, studentId, fromStatus, toStatus, changedByUserId, changedByUserName, reason, createdAt.
 
-interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  senderName: string;
-  text: string;
-  attachments?: string[];
-  linkedTaskId?: string;
-  linkedStudentId?: string;
-  linkedSchoolId?: string;
-  createdAt: string;
-  readBy?: string[];
-}
-```
+## Field Visit
 
-## 9. Employee Attendance
+Fields:
 
-```ts
-interface EmployeeAttendanceRecord {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  date: string;
-  checkInAt?: string;
-  checkOutAt?: string;
-  status: 'present' | 'absent' | 'leave' | 'half_day' | 'late';
-  latitude?: number;
-  longitude?: number;
-  remarks?: string;
-}
-```
+id, schoolId, schoolName, employeeId, employeeName, purpose, status, startedAt, endedAt, startLatitude, startLongitude, endLatitude, endLongitude, studentsContacted, studentsRegistered, documentsCollected, notes, createdAt, updatedAt.
 
-## 10. Test
+Location fields are optional and policy-controlled.
 
-```ts
-interface PETTest {
-  id: string;
-  name: string;
-  intakeId?: string;
-  date?: string;
-  subjects: {
-    name: string;
-    maxMarks: number;
-    passingMarks?: number;
-  }[];
-  selectionRule?: string;
-  status: 'draft' | 'scheduled' | 'ongoing' | 'completed';
-}
-```
+## Field Media
 
-## 11. Test Result
+Fields:
 
-```ts
-interface PETTestResult {
-  id: string;
-  testId: string;
-  studentId: string;
-  totalMarks: number;
-  totalMaxMarks: number;
-  percentage: number;
-  result: 'eligible' | 'not_eligible' | 'pending';
-  evaluatorUserId?: string;
-  remarks?: string;
-  subjectMarks: {
-    subject: string;
-    maxMarks: number;
-    obtainedMarks: number;
-  }[];
-  createdAt: string;
-  updatedAt?: string;
-}
-```
+id, visitId, schoolId, uploadedByUserId, uploadedByUserName, type, relativePath, originalName, caption, createdAt.
 
-## 12. Enrollment
+## Task
 
-```ts
-interface Enrollment {
-  id: string;
-  studentId: string;
-  intakeId?: string;
-  enrollmentDate: string;
-  enrolledByUserId: string;
-  status: 'pending' | 'enrolled' | 'cancelled';
-  notes?: string;
-}
-```
+Fields:
 
-## 13. Website Form Submission
+id, title, description, createdByUserId, createdByUserName, assignedToUserId, assignedToUserName, priority, status, dueDate, schoolId, studentId, visitId, createdAt, updatedAt, completedAt.
 
-```ts
-interface WebsiteFormSubmission {
-  id: string;
-  formType: 'student_registration' | 'enquiry' | 'volunteer' | 'school_partnership' | 'other';
-  name?: string;
-  phone?: string;
-  email?: string;
-  payload: Record<string, unknown>;
-  status: 'new' | 'assigned' | 'in_progress' | 'converted' | 'closed';
-  assignedToUserId?: string;
-  createdAt: string;
-  updatedAt?: string;
-}
-```
+Task statuses:
 
-## 14. Activity Log
+pending
+accepted
+in_progress
+submitted
+completed
+cancelled
 
-Keep a complete audit trail.
+## Conversation / Message
 
-Important event types:
+Conversation fields:
 
-- login/logout
-- employee created/disabled
-- task created/assigned/completed
-- message sent
-- field visit started/completed
-- student created/updated
-- student status changed
-- test scheduled/completed
-- student selected/not selected
-- enrollment completed
-- media uploaded
-- website enquiry received
-- attendance marked
+id, participantIds, lastMessageAt, createdAt.
 
-## 15. Firestore Collections
+Message fields:
 
-Recommended collection names:
+id, conversationId, senderId, senderName, text, attachmentPaths, linkedTaskId, linkedStudentId, linkedSchoolId, linkedVisitId, createdAt.
 
-```text
-organization
-users
-schools
-students
-tasks
-conversations
-messages
-field_visits
-field_media
-employee_attendance
-tests
-test_results
-enrollments
-website_forms
-notifications
-activity_logs
-```
+## Employee Attendance
 
-Retain old collections during migration if existing data must remain accessible. Migrate deliberately; do not silently destroy data.
+Fields:
+
+id, employeeId, employeeName, date, checkInAt, checkOutAt, status, latitude, longitude, remarks.
+
+## Tests
+
+Tests have configurable subjects and selection criteria. Store tests and results separately.
+
+## Enrollment
+
+Store enrollment separately so the student journey is preserved.
+
+## Website Form
+
+Fields:
+
+id, formType, name, phone, email, payloadJson, status, assignedToUserId, createdAt, updatedAt.
+
+## Audit Log
+
+Every important mutation records:
+
+- actor
+- action
+- target
+- metadata
+- timestamp
+- IP where appropriate
