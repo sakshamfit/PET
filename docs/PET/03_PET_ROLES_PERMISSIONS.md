@@ -1,131 +1,91 @@
 # PET Roles & Permissions
 
-## 1. Role Model
+## Roles
 
 Initial roles:
 
-- `main_admin`
-- `employee`
+- main_admin
+- employee
 
-Design the permission system so more roles can be added later without rewriting authorization logic.
+Future roles must be addable without rewriting authorization logic.
 
-## 2. Main Admin
+## Main Admin
 
-Main Admin is organization-wide administrator.
+Full access to:
 
-### Access
+Employees
+Students
+Schools
+Field Visits
+Tasks
+Chat
+Attendance
+Tests
+Evaluation
+Enrollment
+Website Forms
+Reports
+Notifications
+Settings
+Audit Logs
 
-```text
-Employees             FULL
-Students              FULL
-Schools               FULL
-Field Visits          FULL
-Tasks                 FULL
-Chat                  FULL
-Attendance            FULL
-Tests                 FULL
-Evaluation            FULL
-Enrollment            FULL
-Website Forms         FULL
-Reports               FULL
-Notifications         FULL
-Settings              FULL
-Audit Logs            FULL
-```
+Main Admin can create/update/deactivate employees, initiate secure access resets, assign/reassign tasks, view all activity, manage students/schools/tests/enrollment, view attendance, website forms, reports and audit logs.
 
-### Main Admin actions
+## Employee
 
-- create employee
-- edit employee
-- activate/deactivate employee
-- reset/revoke employee access
-- assign/reassign tasks
-- view every task
-- create tasks for employees
-- view all chats
-- create announcements
-- view all field visits
-- view uploaded field media
-- manage school directory
-- manage student lifecycle
-- configure tests
-- review evaluations
-- approve/complete enrollment where applicable
-- view all attendance
-- view analytics and audit logs
+Operational access:
 
-## 3. Employee
+- own dashboard
+- own attendance
+- assigned tasks
+- permitted peer tasks
+- student creation and permitted updates
+- school viewing and permitted field updates
+- own field visits
+- field media uploads
+- authorized test entry
+- authorized enrollment work
+- internal chat
+- assigned website-form follow-up
+- limited reports
+- own profile
 
-Employee permissions are work-focused.
+## Server Authorization
 
-### Access
+Never trust role, user ID, or ownership claims from the browser.
 
-```text
-Own Dashboard          ALLOW
-Own Attendance         ALLOW
-Tasks                  OWN + permitted collaboration
-Students               CREATE + permitted update
-Schools                VIEW + field update
-Field Visits           CREATE/UPDATE OWN
-Field Media            UPLOAD
-Tests                  VIEW + authorized entry
-Chat                   ALLOW
-Website Forms          ASSIGNED ONLY
-Reports                LIMITED
-Settings               OWN PROFILE ONLY
-Audit Logs             OWN RELEVANT ACTIVITY
-```
+Every protected API request must:
 
-### Employee restrictions
+1. verify the JWT
+2. verify the live server-side session
+3. load the user from SQLite
+4. verify the user is active
+5. resolve current role/permissions
+6. check the target resource
+7. execute only the authorized operation
 
-An employee must not:
+## Task Collaboration
 
-- create Main Admin accounts
-- change organization-wide settings
-- change another employee's permissions
-- access passwords
-- delete organization records permanently without elevated permission
-- access confidential admin-only reports unless explicitly permitted
+Main Admin may assign tasks to any employee.
 
-## 4. Task Collaboration
+Employees may assign tasks to other employees when peer task creation is enabled.
 
-Employees may create tasks for each other only within the configured organization policy.
+Main Admin can always see and audit all tasks.
 
-Example:
+## Password Handling
 
-```text
-Rahul
-  ↓ creates
-Task: Verify school documents
-  ↓ assigns to
-Arjun
-```
+Never store or expose:
 
-Main Admin can always see the task.
+- plaintext passwords
+- temporary passwords after provisioning
+- passwords in JWTs
+- passwords in frontend state
+- passwords in browser localStorage
 
-## 5. Data Ownership
+Store only a strong password hash and access metadata such as mustChangePassword.
 
-Never enforce business visibility only in the UI.
+## Data Ownership
 
-Authorization must be enforced in the data layer / backend / Firestore security rules.
+The PET production database belongs to Purvanchal Education Trust.
 
-## 6. Audit Requirements
-
-Record:
-
-- who performed the action
-- what changed
-- when
-- entity affected
-- previous value where appropriate
-- new value where appropriate
-
-Example:
-
-```text
-Rahul Singh
-changed
-Aman Kumar
-REGISTERED → SELECTED
-20 Sep 2026 16:42
-```
+Developer access should be controlled infrastructure access, not ownership of the client's production data.
