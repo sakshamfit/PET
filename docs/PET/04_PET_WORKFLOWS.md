@@ -1,242 +1,59 @@
 # PET Operational Workflows
 
-## 1. Field Visit Workflow
+## Daily Employee
 
-```text
-Employee logs in
-      ↓
-Mark attendance
-      ↓
-Open Field Visits
-      ↓
-Select school
-      ↓
-Start visit
-      ↓
-Visit dashboard
-      ├── Register students
-      ├── Upload photos
-      ├── Add notes
-      ├── Create tasks
-      └── Update existing student records
-      ↓
-Submit visit report
-      ↓
-End visit
-```
+Login → Check In → Review Tasks → Review Visits → Travel to School → Start Visit → Register/Update Students → Upload Survey Media → Create/Complete Tasks → Submit Visit Report → End Visit → Check Out.
 
-## 2. Student Registration Workflow
+## Field Visit
 
-```text
-Start student registration
-      ↓
-Capture photo
-      ↓
-Enter identity information
-      ↓
-Enter parent/guardian information
-      ↓
-Select school
-      ↓
-Enter educational/location information
-      ↓
-Validate required fields
-      ↓
-Detect possible duplicate
-      ↓
-Create PET Student ID
-      ↓
-Status = REGISTERED
-      ↓
-Show student profile
-```
+Select School → Start Visit → Register Students → Upload Photos/Documents → Add Notes → Create or update Tasks → Submit Visit Report → End Visit.
 
-### Duplicate detection
+## Student Registration
 
-Before creating a new student, check combinations such as:
+Register Student → Capture Photo → Student Details → Parent Details → School → Education/Location → Duplicate Check → Save → Server generates PET Student ID → REGISTERED.
 
-- name + parent phone
-- name + student phone
-- name + school
-- exact PET Student ID when importing
+The same school should be reusable while a visit is active.
 
-Do not silently merge records. Present a possible duplicate warning and let an authorized user decide.
+## Student Journey
 
-## 3. Testing Workflow
+REGISTERED → TEST_SCHEDULED → TEST_COMPLETED → UNDER_EVALUATION → SELECTED / WAITLISTED / NOT_SELECTED → ENROLLED.
 
-```text
-Admin creates test
-      ↓
-Student assigned/scheduled
-      ↓
-Test conducted
-      ↓
-Marks entered
-      ↓
-Automatic total/percentage
-      ↓
-Eligibility evaluation
-      ↓
-Status update
-```
+Every transition creates a history record.
 
-Suggested transition:
+## Duplicate Detection
 
-```text
-REGISTERED
-    ↓
-TEST_SCHEDULED
-    ↓
-TEST_COMPLETED
-    ↓
-UNDER_EVALUATION
-    ↓
-SELECTED / WAITLISTED / NOT_SELECTED
-```
+Check suitable combinations such as student name + parent phone, student name + student phone, student name + school, and exact PET Student ID during imports.
 
-## 4. Enrollment Workflow
+Show a warning. Never silently merge.
 
-```text
-SELECTED
-   ↓
-Enrollment follow-up
-   ↓
-Required documents verified
-   ↓
-Enrollment approved/completed
-   ↓
-Status = ENROLLED
-```
+## Testing
 
-## 5. Task Workflow
+Admin creates test → Schedule/assign students → Conduct test → Enter marks → Calculate totals → Apply configured criteria → Update student lifecycle.
 
-Tasks can originate from Admin or employees.
+## Enrollment
 
-```text
-CREATE
-  ↓
-PENDING
-  ↓
-ACCEPTED
-  ↓
-IN_PROGRESS
-  ↓
-SUBMITTED
-  ↓
-COMPLETED
-```
+SELECTED → Follow-up → Documents → Verification → ENROLLED.
 
-Cancellation must be explicit and audited.
+## Tasks
 
-## 6. Task Assignment Examples
+CREATE → PENDING → ACCEPTED → IN_PROGRESS → SUBMITTED → COMPLETED.
 
-### Admin → Employee
+Cancellation is explicit and audited.
 
-```text
-Visit ABC School tomorrow
-Collect student data
-Upload visit photos
-Submit field report
-```
+## Communication
 
-### Employee → Employee
+Messages can include student, school, task, field visit, and photo/document context.
 
-```text
-Verify documents for Aman Kumar
-Please contact the school coordinator
-Review today's survey
-```
+## Attendance
 
-## 7. Communication Workflow
+Check In → Work / Field Visit → Check Out.
 
-Chat should support context links.
+## Website Forms
 
-An employee can send:
+Public Website → PET API → Validation + Rate Limit → Website Submission → Admin Queue → Assign Employee → Follow-up Task → Convert into Student / Enquiry / School.
 
-```text
-Message
-+ student link
-+ school link
-+ task link
-+ photo/document attachment
-```
+## Offline Field Work
 
-This avoids conversations becoming disconnected from operational records.
+Create local operation → sync queue → connectivity returns → send idempotent operation to API → API validates and commits transaction → queue marked synchronized.
 
-## 8. Field Survey Workflow
-
-```text
-Start visit
-   ↓
-Capture school information
-   ↓
-Upload images
-   ↓
-Enter student count
-   ↓
-Enter registrations
-   ↓
-Add notes
-   ↓
-Submit survey
-```
-
-Example report:
-
-```text
-School: ABC Public School
-Employee: Rahul Singh
-Students contacted: 58
-Students registered: 42
-Documents collected: 31
-Photos: 12
-Notes: Follow-up required
-```
-
-## 9. Attendance Workflow
-
-```text
-Login
- ↓
-Mark check-in
- ↓
-Work / field visit
- ↓
-Mark check-out
-```
-
-Admin can view daily, weekly and monthly attendance.
-
-## 10. Website Form Workflow
-
-```text
-Public website
-     ↓
-PET backend/API
-     ↓
-Website Form Submission
-     ↓
-Admin / assigned employee
-     ↓
-Follow-up task
-     ↓
-Student / enquiry / school record
-```
-
-The website integration should be API-based where possible, not dependent on copying/pasting emails.
-
-## 11. Search Workflow
-
-Search should be available globally.
-
-```text
-Search
-  ↓
-Student / School / Employee / Task
-  ↓
-Result
-  ↓
-Context profile
-```
-
-Student search should be the highest-priority global search use case.
+Do not create duplicate records during reconnect.
