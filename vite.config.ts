@@ -20,7 +20,12 @@ function cspPlugin(): Plugin {
   const CSP = [
     "default-src 'self'",
     "script-src 'self'",
-    "style-src 'self' 'unsafe-inline'",
+    // index.html loads the Inter / JetBrains Mono stylesheets from Google
+    // Fonts. Without the host here the stylesheet was silently blocked in the
+    // production build, so the deployed app rendered in fallback fonts while
+    // local dev looked right — i.e. the live site did not look like the code
+    // it was built from. The font *files* are covered by font-src below.
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: https:",
     "font-src 'self' https://fonts.gstatic.com",
     "connect-src 'self' https: wss:",
@@ -58,6 +63,15 @@ export default defineConfig(({command}) => {
     plugins: [react(), tailwindcss(), cspPlugin(), buildStamp],
     define: {
       __LEGACY_BUILD__: JSON.stringify(build),
+    },
+    // `npm run preview:legacy` is how anyone (and the hosted preview) checks
+    // what a deployment will actually serve: `/` (this portal) and `/app/`
+    // (the PET app that vite.pet-vercel.config.ts writes beside it).
+    preview: {
+      host: '0.0.0.0',
+      port: 4173,
+      strictPort: true,
+      allowedHosts: ['.e2b.app'],
     },
     resolve: {
       alias: {

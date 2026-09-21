@@ -16,6 +16,37 @@ on the office PC (services + tunnel + first Main Admin), Phase 18 backup *schedu
 on that machine, Phase 17 remainder (legacy UI retirement / data migration), Phase 19 Android
 wrapper per spec 12, Phase 20–22 final security + testing loops against real data.
 
+## Why the Vercel URL never showed the PET app (fixed 2026-09-21)
+
+**The finding.** Every Vercel project on this repository builds from the root
+`vercel.json`, which ran `npm run build:legacy` → `dist/`. That artefact is the
+legacy M.S. Public School portal (`src/`) — it has never contained a single line
+of `pet-web/`. So "Vercel still shows the old build" was literal and structural:
+no matter how many times the PET app was changed and pushed, the deployment
+rebuilt the same legacy portal. Deployment freshness was fine the whole time
+(the stamps/headers/no-cache work of PR #10 proves it); **the wrong app was
+being deployed.**
+
+**The fix.** One Vercel deployment now carries both apps:
+
+| Path | App | Built by |
+| :-- | :-- | :-- |
+| `/` | legacy M.S. Public School portal (unchanged) | `npm run build:legacy` → `dist/` (fatal on failure) |
+| `/app/` | PET field-operations app — **interface preview** | `npm run build:pet-vercel` → `dist/app/` (best effort) |
+
+The preview is decorated honestly: it sets `__PET_STATIC_PREVIEW__`, so the app
+prints "Interface preview only — the PET data server runs on the Trust's office
+PC" instead of failing silently at sign-in, and it can be pointed at the real
+server by setting `PET_API_BASE` at build time (Vercel → Settings → Environment
+Variables). The full PET platform still lives on the office PC per doc 13.
+
+Verify from anywhere, no login:
+
+```bash
+curl -s https://<the-app>/build-info.json       # legacy portal build
+curl -s https://<the-app>/app/build-info.json   # PET app build
+```
+
 ## Build freshness & go-live (2026-09-21)
 
 **The problem:** the PET web app is compiled into `server/public/app/`, which is

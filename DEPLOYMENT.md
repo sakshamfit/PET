@@ -56,36 +56,83 @@ npm start            # builds the current source, then serves on :8080
 **Full go-live runbook (office PC + your domain via Cloudflare Tunnel, free):**
 [docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)
 
-### Deploying the *legacy* school portal (until Phase 20 migration)
+### A. Vercel — one deployment, both apps
+
+`vercel.json` runs **`npm run build:vercel`** (`scripts/vercel-build.mjs`), which
+puts both applications on the same deployment:
+
+| Path | What it is | Built from | Failure behaviour |
+| :-- | :-- | :-- | :-- |
+| `/` | **M.S. Public School portal** — the school app people use daily | `src/` → `dist/` | **fatal**: a broken build must never replace the live site |
+| `/app/` | **PET field-operations app — interface preview** | `pet-web/` → `dist/app/` | best effort: if it fails, the portal still ships and the log says why |
+
+The PET platform itself is a *server* (Express + SQLite on the Trust's machine —
+see [doc 13](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)); a static host
+can serve its interface but never its data. That is why the preview says
+**"Interface preview only"** on screen and cannot sign anyone in. Point it at a
+real server by setting `PET_API_BASE` (Vercel → project → Settings → Environment
+Variables, e.g. `https://app.purvanchaltrust.org`) and redeploying.
 
 ```bash
-npm run build:legacy   # outputs dist/ (CSP meta injected automatically)
+npm run build:vercel   # exactly what Vercel runs — / and /app/ in dist/
+npm run preview:legacy # serve that dist/ locally and look at both
 ```
 
-### A. Vercel
-1. Push this project to GitHub and import it at [vercel.com](https://vercel.com).
-2. Framework preset: **Vite** • Build: `npm run build:legacy` • Output: `dist`.
+**Which build is this URL serving?** (no login needed)
+
+```bash
+curl -s https://<your-app>/build-info.json       # → legacy portal build
+curl -s https://<your-app>/app/build-info.json   # → PET preview build
+```
 
 ### "Vercel still shows the old build" — checklist
 
-1. **Production only follows `main`.** Vercel builds the production URL from the
-   production branch (`main`); any other branch gets a separate Preview URL.
-   Merge your work to `main` (a pull request is enough) and Vercel redeploys
-   automatically.
-2. **Check which build you are actually looking at.** Every build is stamped:
-   open **Settings → About & Support** (or hover the stamp at the bottom of the
-   sidebar), or fetch `https://<your-app>.vercel.app/build-info.json` — it shows
-   `buildId`, `commit` and `builtAt`. Compare the commit with Vercel dashboard →
-   Deployments → the latest deployment. If they match, you *are* on the new build.
-3. **Hard-refresh once after a deploy.** `index.html` and `build-info.json` are
-   served with no-cache headers (`vercel.json`) and hashed assets are immutable,
-   but a tab that loaded *before* the fix may still hold the old shell —
-   <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> (or clear site data) fixes it.
-   Any tab left open now shows an **"Update now"** banner by itself when a newer
-   build goes live.
-4. **Still stuck?** Vercel dashboard → Deployments → `⋯` on the latest deployment
-   → **Redeploy** with *"Clear build cache"* checked — this rules out a poisoned
-   build cache.
+1. **Are you looking at a frozen URL?** Only a project's **production domain**
+   moves forward:
+   * `https://<project>-<hash>-<team>.vercel.app` = one *specific* deployment —
+     frozen forever, no matter how often you push.
+   * `https://<project>-git-<branch>-<team>.vercel.app` = that *branch's* latest
+     deployment — frozen as soon as the branch stops moving (every
+     pull-request comment links one of these).
+   * The **Visit** button in Vercel → Deployments opens the deployment you clicked.
+
+   Open the production domain instead: Vercel → your project → **Domains**.
+
+2. **Which app do you expect at the root?** This repository holds two apps and
+   Vercel serves both, but at *different paths* — the school portal at `/` and
+   the PET app at `/app/` (see the table above). The PET app has never been at
+   `/`, and could not be: it needs the server in doc 13. If the plan is to move
+   the PET app to the root and the portal elsewhere, say so — it is a one-line
+   change in `vite.pet-vercel.config.ts` plus a redirect for the portal, and it
+   must be a deliberate decision, because teachers' bookmarks and the installed
+   PWA point at `/`.
+
+3. **Check the build id, don't guess.** The stamp is printed under the login card
+   on `/` (and in the PET app's header); the same value is in
+   `<meta name="legacy-build">` / `<meta name="pet-build">` and in the JSON above.
+   `buildId` = `<commit>-<source-hash>`; compare the commit with the Vercel
+   deployment and `git rev-parse --short=8 HEAD`.
+
+4. **Two Vercel projects build this repository** — `pet` and
+   `school-management-system` — and both run the same build. Make sure you are
+   looking at the domain of the project you are watching.
+
+5. **A failed build never replaces a live site.** Vercel keeps the previous
+   deployment, which is deliberate — but it means the site can sit on an older
+   commit while the *build* is the thing that is broken. Vercel → Deployments
+   shows the failed one; `/build-info.json` keeps reporting the old commit until
+   a deployment succeeds.
+
+6. **Signed-out visitors may see Vercel's login, not your app.** `*.vercel.app`
+   team URLs can sit behind Vercel Authentication (Settings → Deployment
+   Protection). The production/custom domain stays public; the generated
+   `*.vercel.app` URLs do not.
+
+7. **Caches.** Shells and `build-info.json` are `no-store`, hashed assets are
+   immutable, so a new deployment cannot be masked by the CDN. A tab that loaded
+   *before* these headers existed may hold an old shell once —
+   <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>. Any tab open now shows an
+   **"Update now"** banner by itself when a newer build goes live.
 
 ### B. Firebase Hosting
 ```bash
