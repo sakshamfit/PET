@@ -49,6 +49,20 @@ export const activationLimiter = makeLimiter({
   message: 'Too many device activation attempts.',
 });
 
+// /api/public/forms — public website intake; strictest bucket.
+export const publicFormLimiter = makeLimiter({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: 'Too many submissions. Please wait a minute and try again.',
+});
+
+// /api/uploads — bounded but workable for field media batches.
+export const uploadLimiter = makeLimiter({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: 'Too many uploads. Please slow down.',
+});
+
 // Everything else API-wide.
 export const apiLimiter = makeLimiter({
   windowMs: 60 * 1000,

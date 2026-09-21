@@ -46,7 +46,12 @@ test('production config gate rejects insecure settings; accepts a complete one',
   assert.ok(problems.some(p => p.includes('https')), 'must demand https public URL');
   assert.ok(problems.some(p => p.toLowerCase().includes('localhost')), 'must reject localhost URL');
   assert.ok(problems.some(p => p.includes('local origin')), 'must reject local CORS origin');
+  // PET production deployment must also declare its data/upload paths.
+  assert.ok(problems.some(p => p.includes('PET_DATABASE_PATH')), 'must demand PET_DATABASE_PATH');
 
+  // Simulate the complete production environment (as spec 12 requires).
+  process.env.PET_DATABASE_PATH = '/var/pet/data/pet.db';
+  process.env.PET_UPLOAD_DIR = '/var/pet/uploads';
   const ok = validateProductionConfig({
     ...config,
     secrets: { licenseTokenSecret: 'x'.repeat(48), adminBootstrapSecret: 'y' },
@@ -54,6 +59,8 @@ test('production config gate rejects insecure settings; accepts a complete one',
     server: { ...config.server, publicBaseUrl: 'https://api.example.com' },
     cors: { origins: ['https://admin.example.com'] },
   });
+  delete process.env.PET_DATABASE_PATH;
+  delete process.env.PET_UPLOAD_DIR;
   assert.deepEqual(ok, [], `unexpected problems: ${ok.join('; ')}`);
 });
 

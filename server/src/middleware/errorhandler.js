@@ -10,6 +10,7 @@
 import { ApiError } from '../lib/respond.js';
 import { ValidationError } from '../lib/validate.js';
 import { TokenError } from '../lib/tokens.js';
+import { PetTokenError } from '../pet/tokens.js';
 
 export function notFoundHandler(req, res) {
   res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Resource not found.' } });
@@ -17,12 +18,17 @@ export function notFoundHandler(req, res) {
 
 export function errorHandler(err, req, res, _next) {
   if (err instanceof ValidationError || (err instanceof ApiError)) {
-    return res.status(err.status || 400).json({
+    const body = {
       error: { code: err.code || 'VALIDATION_ERROR', message: err.message },
-    });
+    };
+    // Carry safe, client-relevant details (e.g. duplicate candidates).
+    if (err.details && typeof err.details === 'object') {
+      body.error.details = err.details;
+    }
+    return res.status(err.status || 400).json(body);
   }
 
-  if (err instanceof TokenError) {
+  if (err instanceof TokenError || err instanceof PetTokenError) {
     return res.status(401).json({ error: { code: err.code, message: err.message } });
   }
 

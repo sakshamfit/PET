@@ -12,10 +12,17 @@ import https from 'node:https';
 import fs from 'node:fs';
 import config from './config.js';
 import { initDb } from './db.js';
+import { initPetDb } from './pet/db.js';
 import { createApp } from './app.js';
 
 function main() {
   initDb();
+  initPetDb();
+  // PET upload tree (students/schools/field-visits/documents) + backups.
+  for (const sub of ['students', 'schools', 'field-visits', 'documents']) {
+    fs.mkdirSync(`${config.pet.uploadDir}/${sub}`, { recursive: true });
+  }
+  fs.mkdirSync(config.pet.backupDir, { recursive: true });
 
   if (config._devSecretWarning) {
     console.warn(

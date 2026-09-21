@@ -79,7 +79,7 @@ export const AddResultModal: React.FC<AddResultModalProps> = ({
         const obt = Number(updated[index].obtainedMarks) || 0;
         const max = Number(updated[index].maxMarks) || 100;
         const pct = max > 0 ? (obt / max) * 100 : 0;
-        updated[index].grade = calculateGrade(pct);
+        updated[index].grade = calculateGrade(pct).grade;
       }
       return updated;
     });
@@ -100,7 +100,7 @@ export const AddResultModal: React.FC<AddResultModalProps> = ({
   const totalMax = subjects.reduce((a, b) => a + Number(b.maxMarks || 0), 0);
   const totalObt = subjects.reduce((a, b) => a + Number(b.obtainedMarks || 0), 0);
   const overallPercentage = totalMax > 0 ? Number(((totalObt / totalMax) * 100).toFixed(1)) : 0;
-  const overallGrade = calculateGrade(overallPercentage);
+  const overallGrade = calculateGrade(overallPercentage).grade;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

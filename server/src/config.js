@@ -70,9 +70,35 @@ const config = {
     keep: int(env.BACKUP_KEEP, 14),
   },
 
+  /**
+   * Purvanchal Education Trust — operational system configuration.
+   * The operational database, uploads and backups are Trust-owned and
+   * live on the PET production machine. See docs/PET/07, 10 and 12.
+   */
+  pet: {
+    dbPath: env.PET_DATABASE_PATH || path.join(SERVER_ROOT, 'data', 'pet.db'),
+    uploadDir: env.PET_UPLOAD_DIR || path.join(SERVER_ROOT, 'uploads'),
+    backupDir: env.PET_BACKUP_DIR || path.join(SERVER_ROOT, 'backups', 'pet'),
+    // Max decoded upload size in bytes (photos/documents/videos).
+    maxUploadBytes: int(env.PET_MAX_UPLOAD_BYTES, 15 * 1024 * 1024),
+    // Allow employees to create tasks for other employees.
+    peerTasksEnabled: bool(env.PET_PEER_TASKS, true),
+    // Employees arriving after this local time + grace are marked LATE.
+    workStartTime: env.PET_WORK_START_TIME || '10:00',
+    workStartGraceMinutes: int(env.PET_WORK_START_GRACE_MINUTES, 15),
+    backupKeepDaily: int(env.PET_BACKUP_KEEP_DAILY, 14),
+    backupKeepWeekly: int(env.PET_BACKUP_KEEP_WEEKLY, 8),
+    backupKeepMonthly: int(env.PET_BACKUP_KEEP_MONTHLY, 3),
+    // Bootstrap guard for creating the very first Main Admin account.
+    bootstrapSecret: env.PET_BOOTSTRAP_SECRET || '',
+  },
+
   secrets: {
     // Signs short-lived access tokens + admin CSRF tokens. Server only. Never shipped.
     licenseTokenSecret: env.LICENSE_TOKEN_SECRET || '',
+    // Signs PET operational access JWTs (employees + Main Admin). Falls back
+    // to LICENSE_TOKEN_SECRET when unset so existing deployments keep working.
+    petJwtSecret: env.PET_JWT_SECRET || '',
     // One-time bootstrap guard for creating the first administrator.
     adminBootstrapSecret: env.ADMIN_BOOTSTRAP_SECRET || '',
   },
@@ -104,6 +130,7 @@ const config = {
   paths: {
     serverRoot: SERVER_ROOT,
     adminDist: env.ADMIN_DIST_PATH || path.join(SERVER_ROOT, 'public', 'admin'),
+    petAppDist: env.PET_APP_DIST_PATH || path.join(SERVER_ROOT, 'public', 'app'),
   },
 
   version: env.APP_VERSION || '1.0.0',
@@ -162,6 +189,18 @@ export function validateProductionConfig(cfg = config) {
 
   if (!process.env.DATABASE_PATH) {
     problems.push('DATABASE_PATH must be set explicitly in production.');
+  }
+
+  if (!process.env.PET_DATABASE_PATH) {
+    problems.push('PET_DATABASE_PATH must be set explicitly in production.');
+  }
+
+  if (!process.env.PET_UPLOAD_DIR) {
+    problems.push('PET_UPLOAD_DIR must be set explicitly in production.');
+  }
+
+  if (cfg.secrets.petJwtSecret && cfg.secrets.petJwtSecret.length < 32) {
+    problems.push('PET_JWT_SECRET must be at least 32 characters when set.');
   }
 
   if (cfg.cors.origins.length === 0) {

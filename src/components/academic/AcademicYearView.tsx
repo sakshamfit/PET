@@ -42,7 +42,7 @@ export const AcademicYearView: React.FC = () => {
     const sourceClass = db.classes.find(c => c.id === sourceClassId);
     const targetClass = db.classes.find(c => c.id === targetClassId);
 
-    promoteStudents(selectedStudentIds, targetClassId, nextAcademicYear);
+    promoteStudents(sourceClassId, targetClassId, selectedStudentIds, nextAcademicYear);
 
     try {
       confetti({
