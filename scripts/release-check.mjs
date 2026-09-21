@@ -19,6 +19,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { getAppBuild } from '../server/src/lib/build-info.js';
 
 const ROOT = process.cwd();
 const results = [];
@@ -91,12 +92,27 @@ check('production build-config: HTTPS API URL, no localhost', () => {
   return cfg.apiBaseUrl;
 });
 
-check('web build (dist/) exists', () => {
+check('legacy desktop web build (dist/) exists', () => {
   if (!fs.existsSync(path.join(ROOT, 'dist', 'index.html'))) {
-    const e = new Error('run npm run build first');
+    const e = new Error('run npm run build:legacy first');
     e.level = 'warn';
     throw e;
   }
+});
+
+check('PET operations app build exists and matches this checkout', () => {
+  const b = getAppBuild('pet');
+  if (!b.present) {
+    const e = new Error('no build in server/public/app — run: npm run build:pet');
+    e.level = 'warn';
+    throw e;
+  }
+  if (b.stale) {
+    throw new Error(
+      `stale bundle (${b.buildId ?? 'unstamped'}) vs sources — run: npm run build:pet (or npm start)`
+    );
+  }
+  return `build ${b.buildId}`;
 });
 
 check('admin panel build exists', () => {

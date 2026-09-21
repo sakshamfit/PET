@@ -91,6 +91,12 @@ const config = {
     backupKeepMonthly: int(env.PET_BACKUP_KEEP_MONTHLY, 3),
     // Bootstrap guard for creating the very first Main Admin account.
     bootstrapSecret: env.PET_BOOTSTRAP_SECRET || '',
+    // Refuse to serve a bundle that does not match this checkout. On by
+    // default in production; PET_ALLOW_STALE_BUILD=1 downgrades it to a loud
+    // warning (emergency restarts only).
+    allowStaleBuild: bool(env.PET_ALLOW_STALE_BUILD, false),
+    // Skip the automatic pre-serve build in scripts/start-pet.mjs.
+    skipBuildOnStart: bool(env.PET_SKIP_BUILD_ON_START, false),
   },
 
   secrets: {
@@ -203,14 +209,22 @@ export function validateProductionConfig(cfg = config) {
     problems.push('PET_JWT_SECRET must be at least 32 characters when set.');
   }
 
-  if (cfg.cors.origins.length === 0) {
-    problems.push('CORS_ORIGINS must list the exact admin/desktop origins allowed.');
-  }
+  // Same-origin deployments (the office-PC + Cloudflare Tunnel layout) need no
+  // CORS allowlist at all: an empty list is the *strictest* setting — browsers
+  // receive no Access-Control-Allow-Origin, so no cross-origin caller is
+  // allowed. What must never happen is a wildcard or a local origin.
   for (const origin of cfg.cors.origins) {
-    if (isLocalUrl(origin)) {
+    if (origin.includes('*')) {
+      problems.push(`CORS_ORIGINS must not contain wildcards (${origin}).`);
+    } else if (isLocalUrl(origin)) {
       problems.push(`CORS_ORIGINS contains a local origin (${origin}) which is not allowed in production.`);
     }
   }
+
+  // Note: PET_ALLOW_STALE_BUILD is deliberately NOT rejected here — it is the
+  // documented escape hatch for an emergency restart, and it downgrades the
+  // stale-bundle failure to a loud warning rather than hiding it.
+
 
   return problems;
 }

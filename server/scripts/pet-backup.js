@@ -15,6 +15,11 @@
  * the backup — database, uploads and restore metadata only.
  */
 
+// Loads .env.production / .env before anything reads configuration. Must be
+// the first import so that C:\PET\data\... (production paths) are in effect
+// and this command never touches the wrong database.
+import { envLoadInfo } from '../src/lib/env-file.js';
+
 import fs from 'node:fs';
 import path from 'node:path';
 import Database from 'better-sqlite3';

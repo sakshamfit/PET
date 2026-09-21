@@ -4,7 +4,8 @@
  * secrets, credentials, and forbidden configuration.
  *
  * Scans (when present):
- *   dist/                  — web/desktop renderer bundle
+ *   dist/                  — legacy web/desktop renderer bundle
+ *   server/public/app/     — PET operations app bundle (what employees use)
  *   server/public/admin/   — admin panel bundle
  *   electron/              — desktop main-process code shipped in the EXE
  *   release/               — built installers (filename-level checks only)
@@ -22,7 +23,12 @@ import path from 'node:path';
 
 const ROOT = process.cwd();
 
-const SCAN_DIRS = ['dist', path.join('server', 'public', 'admin'), 'electron'];
+const SCAN_DIRS = [
+  'dist',
+  path.join('server', 'public', 'app'),
+  path.join('server', 'public', 'admin'),
+  'electron',
+];
 const EXTRA_FILES = ['electron.cjs', 'index.html', path.join('public', 'manifest.json')];
 
 // Patterns that must never appear in production output with a real value.

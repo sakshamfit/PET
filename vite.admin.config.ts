@@ -2,18 +2,32 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vite';
+import { makeBuildStamp } from './scripts/vite-build-stamp.mjs';
 
 /**
  * Admin Control Panel — separate React SPA build.
  *
  * Output is served by the control-plane server itself at /admin
  * (same-origin → no CORS surface for the admin API).
+ *
+ * Stamped like the PET app so a stale admin bundle is detected the same way
+ * (check:build / verify:live / /health).
  */
-export default defineConfig(() => {
+export default defineConfig(({ command }) => {
+  const { build, plugin: buildStamp } = makeBuildStamp({
+    app: 'admin',
+    root: __dirname,
+    version: process.env.APP_VERSION || '1.0.0',
+    devMode: command !== 'build',
+  });
+
   return {
     root: 'admin',
     base: '/admin/',
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), buildStamp],
+    define: {
+      __ADMIN_BUILD__: JSON.stringify(build),
+    },
     resolve: {
       alias: {
         '@admin': path.resolve(__dirname, 'admin/src'),

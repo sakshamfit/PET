@@ -16,6 +16,11 @@
  *   0 3 * * * /usr/bin/node /opt/sms/server/scripts/backup.js >> /var/log/sms-backup.log 2>&1
  */
 
+// Loads .env.production / .env before anything reads configuration. Must be
+// the first import so that C:\PET\data\... (production paths) are in effect
+// and this command never touches the wrong database.
+import { envLoadInfo } from '../src/lib/env-file.js';
+
 import fs from 'node:fs';
 import path from 'node:path';
 import Database from 'better-sqlite3';

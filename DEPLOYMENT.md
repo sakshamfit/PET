@@ -41,16 +41,30 @@ the phase-2 local-SQLite architecture. See `PRODUCTION_REPORT.md`.
 
 ---
 
-## 🚀 Option 1: Live Web & Cloud Deployment
+## 🚀 Option 1: Live Web & Cloud Deployment (the PET platform)
+
+The production system is **one Node server** that serves the API *and* the web
+app on the same origin — employees open one URL, nothing is hosted separately.
 
 ```bash
 npm install
-npm run build        # outputs dist/ (CSP meta injected automatically)
+npm start            # builds the current source, then serves on :8080
+#   employees → https://<your-domain>/app/      (or http://localhost:8080/app/)
+#   admins    → https://<your-domain>/admin
+```
+
+**Full go-live runbook (office PC + your domain via Cloudflare Tunnel, free):**
+[docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)
+
+### Deploying the *legacy* school portal (until Phase 20 migration)
+
+```bash
+npm run build:legacy   # outputs dist/ (CSP meta injected automatically)
 ```
 
 ### A. Vercel
 1. Push this project to GitHub and import it at [vercel.com](https://vercel.com).
-2. Framework preset: **Vite** • Build: `npm run build` • Output: `dist`.
+2. Framework preset: **Vite** • Build: `npm run build:legacy` • Output: `dist`.
 
 ### B. Firebase Hosting
 ```bash
@@ -60,7 +74,8 @@ firebase deploy --only hosting
 ```
 
 ### C. Custom domain
-Add the school's sub-domain in the hosting dashboard with a standard CNAME record.
+Add the sub-domain in the hosting dashboard with a standard CNAME record.
+(or use Cloudflare Tunnel — see the runbook above; no hosting fees at all)
 
 ---
 
@@ -68,7 +83,7 @@ Add the school's sub-domain in the hosting dashboard with a standard CNAME recor
 
 ### Development
 ```bash
-npm run build
+npm run build:legacy      # the legacy portal is what the desktop shell loads
 npx electron .
 ```
 
@@ -90,6 +105,25 @@ delete `%LOCALAPPDATA%\SchoolManagementSystem`).
 > 📦 Windows builds produce correctly signed installers only when a
 > code-signing certificate is configured on the build machine — see
 > [CONTROL_PLANE.md](./CONTROL_PLANE.md) § Code signing.
+
+---
+
+## 🧭 Which build am I looking at?
+
+The web app is compiled into `server/public/app/` (generated, git-ignored), so
+the app can be stale if that folder is not rebuilt. It is now impossible to miss:
+
+```bash
+npm run check:build    # disk vs checkout, per app
+npm run verify:live    # what a RUNNING server is actually serving
+npm start              # rebuilds if needed, then serves — the supported command
+```
+
+Every build carries an id (`X-App-Build` header, `<meta name="pet-build">`,
+`/health → app_build.build_id`, and the app's own footer). Production refuses
+to boot on a stale/missing bundle instead of serving it silently, and any
+already-open client shows an **"Update now"** banner when the server has a
+newer build.
 
 ---
 

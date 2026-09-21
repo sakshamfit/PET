@@ -1,14 +1,77 @@
 # PET Transformation Status
 
-Last updated: 2026-09-20 (backend phases 0–16 complete + pet-web SPA milestone)
+Last updated: 2026-09-21 (backend phases 0–16 complete + pet-web SPA milestone
++ build-freshness hardening and the Option 2 go-live kit)
 
 ## Current Phase
 
-Backend: Phases 0–16 COMPLETE and verified (78/78 server tests). Frontend: PET web app SPA
-(`pet-web/`) COMPLETE as an end-to-end milestone — mobile-first React app for Main Admin +
-Employee served at `/app/` with the real API. Next: Phase 17 remainder (legacy UI retirement
-/ data migration), Phase 18 backup/restore ops verification, Phase 19 Android wrapper per
-spec 12, Phase 20–22 final security + testing loops against real data.
+Backend: Phases 0–16 COMPLETE and verified (**88/88** server tests). Frontend: PET web app
+SPA (`pet-web/`) COMPLETE as an end-to-end milestone — mobile-first React app for Main Admin
++ Employee served at `/app/` with the real API. **Deployment: ready to go live** — the
+build-freshness hardening and the Option 2 (office PC + Cloudflare Tunnel) kit are complete
+and verified; what remains is running the runbook on the Trust's office PC.
+
+Next: execute [`docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md`](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)
+on the office PC (services + tunnel + first Main Admin), Phase 18 backup *schedule* activation
+on that machine, Phase 17 remainder (legacy UI retirement / data migration), Phase 19 Android
+wrapper per spec 12, Phase 20–22 final security + testing loops against real data.
+
+## Build freshness & go-live (2026-09-21)
+
+**The problem:** the PET web app is compiled into `server/public/app/`, which is
+generated and git-ignored. Any process that served that folder without checking
+it could serve a bundle from an older commit — "the software is still showing
+the old build" — and nothing in the app could say *which* build you were
+looking at. The obvious commands made it worse: `npm run dev` / `npm run build`
+/ the packaged desktop shell all pointed at the **legacy** M.S. Public School
+React app in `src/`, not at the PET app.
+
+**The fix (all verified live on 2026-09-21):**
+
+- **Every build is stamped.** `scripts/vite-build-stamp.mjs` gives each PET and
+  admin build an id = `<git commit>-<sha1 of the sources it was built from>`
+  (no timestamp, so an unchanged rebuild stays the same build). The id is
+  embedded in the bundle (`__PET_BUILD__`), written as `build-info.json` beside
+  it, injected into the HTML shell (`<meta name="pet-build">`) and returned in
+  every `/app` response as `X-App-Build`.
+- **The server refuses to serve a stale bundle.** In production a missing or
+  stale bundle is a hard startup failure (exit 78) listing both build ids and
+  the one-line remedy. `PET_ALLOW_STALE_BUILD=1` downgrades it to a loud warning
+  for emergency restarts only. `/health → app_build` reports
+  `build_id / commit / built_at / age_seconds / stale` (503 `degraded` when no
+  app is installed at all).
+- **`npm start` is the supported way to start the server** (`scripts/start-pet.mjs`):
+  loads `.env.production`, rebuilds if the bundle does not match the checkout,
+  prints the build it is about to serve, then serves. Services use it, so a
+  reboot or an update cannot come up on an old build.
+- **Stale caches are impossible to keep.** App shells and `build-info.json` are
+  served `no-store`, the bare `/` redirect sends `Clear-Site-Data: "cache"`, and
+  an already-open client polls `/app/build-info.json` and shows an
+  **"Update now"** banner when the server has a newer build (never an automatic
+  reload — field staff may be mid-form).
+- **Two commands answer "is the new build live?":** `npm run check:build` (disk
+  vs checkout) and `npm run verify:live` (a *running* server vs checkout,
+  locally or through the tunnel; exit 2 unreachable / 1 stale / 0 match).
+- **Command surface de-ambiguated:** `dev`/`build`/`preview` (and `start`) now
+  mean the PET app; the legacy portal moved to `dev:legacy` (3010),
+  `build:legacy`, `preview:legacy`. CLI scripts (`pet:bootstrap`, `pet:backup`,
+  `server:bootstrap`, `server:backup`) load `.env.production` themselves, so a
+  hand-run command can never touch the wrong database.
+
+**Option 2 go-live kit (office PC + own domain via free Cloudflare Tunnel):**
+
+- [`docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md`](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)
+  — the full runbook: domain on Cloudflare → code + `.env.production` → first
+  admin → Windows/Linux service → tunnel (dashboard-token or CLI-scripted) →
+  verification from mobile data → employee onboarding → backups → update,
+  rollback and troubleshooting.
+- `.env.production.example` (Office-PC/Tunnel profile, loopback bind,
+  `TRUST_PROXY=1`, empty CORS — the strictest same-origin setting).
+- `scripts/deploy/windows/{install-server-service,update,cloudflare-tunnel}.ps1`
+  and `scripts/deploy/linux/{install-server-service,cloudflare-tunnel}.sh`.
+- The production config gate now *accepts* an empty `CORS_ORIGINS` (same-origin
+  tunnel deployment) and rejects wildcards; it no longer demands a list that a
+  same-origin deployment does not have.
 
 ## Architecture (as built)
 
@@ -88,8 +151,11 @@ Frontend foundation + pet-web SPA:
 ## Live verification (this loop)
 
 - `npx tsc --noEmit`: **0 errors** (whole workspace incl. pet-web).
-- `npm run build` (legacy+admin): PASS · `npm run build:pet`: PASS (220 KB js / 26 KB css gzip≈68 KB).
-- `npm run server:test`: **78/78 PASS**.
+- `npm run build` (PET app → `server/public/app` + admin → `server/public/admin`): PASS, both stamped.
+- `npm run check:build`: PASS (both bundles match the checkout) · `npm run verify:live`: PASS.
+- `npm run server:test`: **88/88 PASS** (78 + 10 new build-freshness tests).
+- Boot gates proven: production + stale bundle → exit 78 with both build ids;
+  `npm start` on a stale bundle → rebuilds, then serves the current build.
 - Live server (dev): `/app/` 200, `/app/students` SPA fallback 200, hashed assets 200.
 - Live API smoke: admin + employee login → `/api/me` 200, `/api/me/dashboard` 200,
   `/api/reports/dashboard` 200, student create 201, duplicate re-post **409
@@ -105,7 +171,12 @@ Frontend foundation + pet-web SPA:
 
 ## Remaining
 
-- PHASE 18 — scheduled backups + restore drill runbook (script exists; add schedule + drill).
+- **GO-LIVE** — run the Option 2 runbook on the office PC (prerequisites → `.env.production`
+  → `npm start` + verify → Main Admin → service install → Cloudflare Tunnel → verify from
+  mobile data → employee onboarding). The scripts are ready: `scripts/deploy/windows/*`,
+  `scripts/deploy/linux/*`.
+- PHASE 18 — scheduled backups + restore drill runbook (script exists; the runbook now
+  includes the Windows scheduled task / cron line and the monthly restore drill).
 - PHASE 19 — production deployment handover doc (env matrix, reverse proxy, VPN, backups cron).
 - PHASE 20 — Firestore → pet.db migration tooling + validation report (export/dry-run/cutover).
 - PHASE 21–22 — final security loop + full end-to-end regression on migrated data.
@@ -135,5 +206,6 @@ Frontend foundation + pet-web SPA:
 
 ## Next Action
 
-Phase 18 — backup scheduling + restore drill; then Phase 20 Firestore export→import pipeline
-with validation drills before cutover.
+Go live with Option 2 on the office PC (doc 13), then Phase 18 backup schedule + restore
+drill on that machine, then the Phase 20 Firestore export→import pipeline with validation
+drills before cutover.

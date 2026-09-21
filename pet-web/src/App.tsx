@@ -14,6 +14,7 @@ import { TasksPage } from './pages/Tasks';
 import { VisitsPage } from './pages/Visits';
 import { ChatPage } from './pages/Chat';
 import { useAutoSync } from './pages/sync';
+import { BuildStamp, UpdateBanner, useBuildWatcher } from './build';
 
 type Route = 'dashboard' | 'students' | 'tasks' | 'visits' | 'chat';
 
@@ -32,6 +33,9 @@ export default function App() {
   const navigate = useCallback((r: string) => setRoute(r as Route), []);
 
   useAutoSync(signedIn);
+  // Detects (and loudly reports) a server that is serving a newer build than
+  // this page is running — the fix for "it still shows the old build".
+  const buildWatch = useBuildWatcher();
 
   useEffect(() => {
     let alive = true;
@@ -56,13 +60,19 @@ export default function App() {
   }
 
   if (!signedIn || !user) {
-    return <LoginPage onLoggedIn={() => setSignedIn(true)} />;
+    return (
+      <>
+        <UpdateBanner watch={buildWatch} />
+        <LoginPage onLoggedIn={() => setSignedIn(true)} />
+      </>
+    );
   }
 
   const isAdmin = user.role === 'main_admin';
 
   return (
     <div className="min-h-dvh pb-20 lg:pb-0">
+      <UpdateBanner watch={buildWatch} />
       {/* Top bar */}
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
@@ -73,6 +83,7 @@ export default function App() {
               <p className="text-[11px] leading-tight text-slate-500">
                 {user.name} · {isAdmin ? 'Main Admin' : `Employee${user.employee_code ? ` · ${user.employee_code}` : ''}`}
               </p>
+              <BuildStamp className="mt-0.5" />
             </div>
           </div>
           <button className="p-btn-ghost !min-h-9 !px-3 text-xs" onClick={() => void petAuth.logout()}>
