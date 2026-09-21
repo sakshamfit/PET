@@ -27,6 +27,7 @@ import { AcademicYearView } from './components/academic/AcademicYearView';
 import { ActivityLogsView } from './components/activity/ActivityLogsView';
 import { SchoolSettingsView } from './components/settings/SchoolSettingsView';
 import { QuickSearchModal } from './components/QuickSearchModal';
+import { UpdateBanner, useBuildWatcher } from './build';
 import { Student } from './types';
 
 const MainLayout: React.FC = () => {
@@ -45,8 +46,18 @@ const MainLayout: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
 
+  // Detects (and loudly reports) a server that is serving a newer build than
+  // this page is running — the fix for "Vercel still shows the old build".
+  // Quiet on purpose in the desktop/Android shells and while offline.
+  const buildWatch = useBuildWatcher();
+
   if (!currentUser) {
-    return <AuthScreen />;
+    return (
+      <>
+        <UpdateBanner watch={buildWatch} />
+        <AuthScreen />
+      </>
+    );
   }
 
   const isPrincipal = currentUser.role === 'principal' && !adminImpersonation;
@@ -69,6 +80,7 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans flex flex-col antialiased selection:bg-[#0066cc] selection:text-white relative overflow-x-hidden pb-16 lg:pb-0">
+      <UpdateBanner watch={buildWatch} />
       {/* Top Application Navbar (Global Nav + Frosted Sub-Nav) */}
       <div className="relative z-30">
         <Navbar

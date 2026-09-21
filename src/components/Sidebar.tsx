@@ -18,6 +18,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useSchool } from '../context/SchoolContext';
+import { BuildStamp } from '../build';
 
 interface SidebarProps {
   currentTab: string;
@@ -132,6 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
 
       {/* Footer Info */}
       <div className="mt-4 border-t border-[#f0f0f0] pt-3">
+        <BuildStamp className="px-3 pb-2" />
         <button
           onClick={logout}
           className="flex w-full items-center justify-between px-3 py-2 text-[13px] font-normal text-[#ff3b30] hover:bg-[#ff3b30]/10 rounded-full transition-colors"

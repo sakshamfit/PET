@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig, type Plugin} from 'vite';
+import {makeBuildStamp} from './scripts/vite-build-stamp.mjs';
 
 /**
  * Injects a Content-Security-Policy meta tag into the PRODUCTION build
@@ -40,10 +41,24 @@ function cspPlugin(): Plugin {
   };
 }
 
-export default defineConfig(() => {
+export default defineConfig(({command}) => {
+  // Stamp the build exactly like the PET/admin bundles: the bundle embeds its
+  // own id (__LEGACY_BUILD__), dist/ gets a build-info.json beside it, and the
+  // HTML shell carries <meta name="legacy-build"> — so the Vercel deployment
+  // can always answer "which build am I looking at?".
+  const {build, plugin: buildStamp} = makeBuildStamp({
+    app: 'legacy',
+    root: __dirname,
+    version: process.env.APP_VERSION || '1.0.0',
+    devMode: command !== 'build',
+  });
+
   return {
     base: './',
-    plugins: [react(), tailwindcss(), cspPlugin()],
+    plugins: [react(), tailwindcss(), cspPlugin(), buildStamp],
+    define: {
+      __LEGACY_BUILD__: JSON.stringify(build),
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -62,7 +77,7 @@ export default defineConfig(() => {
         },
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
