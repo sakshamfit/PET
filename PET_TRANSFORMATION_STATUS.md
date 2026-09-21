@@ -98,6 +98,8 @@ Frontend foundation + pet-web SPA:
 
 ## In Progress
 
+- Phase 19 partially done: `docs/PET/DEPLOYMENT_GUIDE.md` (distribution + production
+  install + Android packaging + backups) written 2026-09-21.
 - Phase 17 remainder: retire/replace legacy React screens with PET UI once data migration
   lands; Android shell per spec 12; PWA install prompt polish.
 
