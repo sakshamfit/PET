@@ -55,6 +55,28 @@ export const PET_SOURCE_ROOTS = [
 /** Admin console build inputs (separate bundle, same server). */
 export const ADMIN_SOURCE_ROOTS = ['admin', 'vite.admin.config.ts'];
 
+/**
+ * Legacy school-portal build inputs (the static Vercel build → dist/).
+ * This is the bundle the Vercel deployment serves, so it is stamped with a
+ * build id exactly like the PET/admin bundles — "Vercel still shows the old
+ * build" becomes answerable by comparing build ids instead of guesswork.
+ */
+export const LEGACY_SOURCE_ROOTS = [
+  'src',
+  'index.html',
+  'public',
+  'vite.config.ts',
+  'package.json',
+  'tsconfig.json',
+];
+
+/** Resolve the source roots for a given app name. */
+export function sourceRootsForApp(app) {
+  if (app === 'admin') return ADMIN_SOURCE_ROOTS;
+  if (app === 'legacy') return LEGACY_SOURCE_ROOTS;
+  return PET_SOURCE_ROOTS;
+}
+
 function walk(absDir, out, rootAbs) {
   let entries;
   try {
@@ -142,7 +164,7 @@ export function getCommit(root = REPO_ROOT) {
  * "the server is running a build I do not have" without reload-looping.
  */
 export function createBuildInfo({ root = REPO_ROOT, app = 'pet', version = '1.0.0', now = new Date() } = {}) {
-  const roots = app === 'admin' ? ADMIN_SOURCE_ROOTS : PET_SOURCE_ROOTS;
+  const roots = sourceRootsForApp(app);
   const { hash, files } = fingerprintSources(root, roots);
   const commit = getCommit(root);
   const sourceHash = files === 0 ? null : hash;

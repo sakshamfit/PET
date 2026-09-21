@@ -15,6 +15,7 @@ import {
   SupportInfo,
   UpdateCheckResult,
 } from '../../services/controlPlane';
+import { BUILD } from '../../build';
 
 export const SupportAboutSection: React.FC = () => {
   const desktop = isDesktop();
@@ -36,6 +37,7 @@ export const SupportAboutSection: React.FC = () => {
     const text = [
       `School Management System — Support Diagnostics`,
       `App Version: ${info.appVersion}`,
+      `Web Build: ${BUILD.buildId} (${BUILD.version}, commit ${BUILD.commit || 'unknown'})`,
       `School: ${info.schoolName || '—'} (${info.schoolId || '—'})`,
       `License: ${info.licenseStatus}${info.licenseExpiresAt ? ` (until ${info.licenseExpiresAt})` : ''}`,
       `Device: ${info.deviceName} [${info.deviceReference}]`,
@@ -80,6 +82,9 @@ export const SupportAboutSection: React.FC = () => {
             The commercial desktop application shows licensing, device and diagnostics information
             here. For support, contact your software provider.
           </p>
+          <p className="font-mono text-[11px] text-gray-400" title={`Commit ${BUILD.commit || 'unknown'} · built ${BUILD.builtAt}`}>
+            Web build {BUILD.buildId} · v{BUILD.version}
+          </p>
         </div>
       ) : !info ? (
         <p className="text-sm text-gray-400">Loading diagnostics…</p>
@@ -89,6 +94,10 @@ export const SupportAboutSection: React.FC = () => {
             <div className="flex justify-between sm:block">
               <dt className="text-gray-500">Application Version</dt>
               <dd className="font-mono font-medium">{info.appVersion}</dd>
+            </div>
+            <div className="flex justify-between sm:block">
+              <dt className="text-gray-500">Web Build</dt>
+              <dd className="font-mono font-medium" title={`Commit ${BUILD.commit || 'unknown'} · built ${BUILD.builtAt}`}>{BUILD.buildId}</dd>
             </div>
             <div className="flex justify-between sm:block">
               <dt className="text-gray-500">School ID</dt>

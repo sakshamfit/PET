@@ -66,6 +66,27 @@ npm run build:legacy   # outputs dist/ (CSP meta injected automatically)
 1. Push this project to GitHub and import it at [vercel.com](https://vercel.com).
 2. Framework preset: **Vite** • Build: `npm run build:legacy` • Output: `dist`.
 
+### "Vercel still shows the old build" — checklist
+
+1. **Production only follows `main`.** Vercel builds the production URL from the
+   production branch (`main`); any other branch gets a separate Preview URL.
+   Merge your work to `main` (a pull request is enough) and Vercel redeploys
+   automatically.
+2. **Check which build you are actually looking at.** Every build is stamped:
+   open **Settings → About & Support** (or hover the stamp at the bottom of the
+   sidebar), or fetch `https://<your-app>.vercel.app/build-info.json` — it shows
+   `buildId`, `commit` and `builtAt`. Compare the commit with Vercel dashboard →
+   Deployments → the latest deployment. If they match, you *are* on the new build.
+3. **Hard-refresh once after a deploy.** `index.html` and `build-info.json` are
+   served with no-cache headers (`vercel.json`) and hashed assets are immutable,
+   but a tab that loaded *before* the fix may still hold the old shell —
+   <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> (or clear site data) fixes it.
+   Any tab left open now shows an **"Update now"** banner by itself when a newer
+   build goes live.
+4. **Still stuck?** Vercel dashboard → Deployments → `⋯` on the latest deployment
+   → **Redeploy** with *"Clear build cache"* checked — this rules out a poisoned
+   build cache.
+
 ### B. Firebase Hosting
 ```bash
 npm install -g firebase-tools
