@@ -111,7 +111,8 @@ npm install
 npm run server:dev            # http://localhost:8080 (dev defaults; warning shown)
 node server/scripts/bootstrap.js --email you@example.com --name "Owner"
 npm run build:admin           # admin panel → http://localhost:8080/admin
-npm run server:test           # 36 automated tests
+npm run dev:all               # PET API :8080 + PET app :3000 (the app employees use)
+npm run server:test           # 88 automated tests
 ```
 
 Development conveniences (all refused in production): default dev token
@@ -325,8 +326,8 @@ keep CODE SIGNING marked as pending — do not claim it.
 npm run clean && npm install
 npm run lint
 npm run server:test        # or: npm run test:all (lint + tests)
-npm run build
-npm run build:admin
+npm run build              # PET app → server/public/app, admin → server/public/admin
+npm run check:build        # both bundles must match this checkout
 npm run audit:prod
 
 # 2. Configure the customer-facing API URL for this build

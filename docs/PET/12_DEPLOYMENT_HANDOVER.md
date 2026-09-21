@@ -1,5 +1,10 @@
 # PET Deployment & Client Handover
 
+> **Implemented runbook:** [`13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md`](./13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)
+> — office PC + the Trust's own domain via a free Cloudflare Tunnel, including
+> the exact commands, verification steps and troubleshooting. This document
+> remains the source of truth for the ownership/layout requirements.
+
 ## Production Ownership
 
 Production infrastructure belongs to Purvanchal Education Trust.

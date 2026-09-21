@@ -14,6 +14,11 @@
  *    add more admin accounts. New admins are audited.
  */
 
+// Loads .env.production / .env before anything reads configuration. Must be
+// the first import so that C:\PET\data\... (production paths) are in effect
+// and this command never touches the wrong database.
+import { envLoadInfo } from '../src/lib/env-file.js';
+
 import { initDb } from '../src/db.js';
 import { randomId, hashPassword, generateTemporaryPassword } from '../src/lib/crypto.js';
 import { audit, AUDIT_ACTIONS } from '../src/lib/audit.js';

@@ -2,17 +2,34 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vite';
+import { makeBuildStamp } from './scripts/vite-build-stamp.mjs';
 
 /**
  * PET web app — separate React SPA build (Purvanchal Education Trust
  * organization & field operations). Output is served by the Express
  * server itself at /app (same-origin → no CORS surface for /api).
+ *
+ * Every build is stamped (see scripts/vite-build-stamp.mjs). The bundle
+ * carries its own build id, writes build-info.json beside itself, and the
+ * server refuses to serve a bundle that does not match the checkout. That
+ * trio is what makes "the software is still showing the old build" answerable
+ * in one request (`npm run verify:live`) instead of guesswork.
  */
-export default defineConfig(() => {
+export default defineConfig(({ command }) => {
+  const { build, plugin: buildStamp } = makeBuildStamp({
+    app: 'pet',
+    root: __dirname,
+    version: process.env.APP_VERSION || '1.0.0',
+    devMode: command !== 'build',
+  });
+
   return {
     root: 'pet-web',
     base: '/app/',
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), buildStamp],
+    define: {
+      __PET_BUILD__: JSON.stringify(build),
+    },
     resolve: {
       alias: {
         '@pet': path.resolve(__dirname, 'pet-web/src'),

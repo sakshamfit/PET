@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { petAuth, PetApiFailure } from '../../../src/services/petApi';
 import { Field } from '../ui';
+import { BuildStamp } from '../build';
 
 export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [email, setEmail] = useState('');
@@ -106,6 +107,9 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
           </form>
         )}
         <p className="mt-6 text-center text-xs text-pet-100/50">Private system — authorized PET staff only</p>
+        <div className="mt-2 text-center">
+          <BuildStamp className="!text-pet-100/40" />
+        </div>
       </div>
     </div>
   );

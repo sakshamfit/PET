@@ -4,6 +4,12 @@
  * Composition order matters: security headers → CORS allowlist → body
  * parsing (strict limits) → API rate limiting → routes → static admin SPA
  * → 404 → sanitized error handler.
+ *
+ * Build freshness: the two web bundles are generated (git-ignored) files, so
+ * every response that can carry a stale app (HTML shells, build-info.json)
+ * is served with `Cache-Control: no-store`, is stamped with `X-App-Build`,
+ * and the bare "/" redirect actively clears the browser's HTTP cache. That
+ * combination is what stops a phone or browser from keeping yesterday's app.
  */
 
 import express from 'express';
@@ -13,6 +19,7 @@ import fs from 'node:fs';
 import config from './config.js';
 import { apiLimiter } from './middleware/ratelimits.js';
 import { notFoundHandler, errorHandler } from './middleware/errorhandler.js';
+import { getAppBuild } from './lib/build-info.js';
 import authRoutes from './routes/auth.js';
 import licenseRoutes from './routes/license.js';
 import deviceRoutes from './routes/devices.js';
@@ -20,6 +27,7 @@ import releaseRoutes from './routes/releases.js';
 import healthRoutes from './routes/health.js';
 import adminApiRoutes from './routes/admin/index.js';
 import petApiRoutes from './pet/routes/index.js';
+
 
 /**
  * CORS: exact-origin allowlist only (no wildcards in production).
@@ -107,6 +115,9 @@ export function createApp() {
     ADMIN_FRAME +
     "; base-uri 'self'; form-action 'self'";
   const adminDist = config.paths.adminDist;
+  // Read on every response (cheap: stat + cached parse) — never capture it at
+  // boot, or the header would disagree with the bundle after a live rebuild.
+  const adminBuildId = () => getAppBuild('admin').buildId || 'unknown';
   if (fs.existsSync(path.join(adminDist, 'index.html'))) {
     app.use(
       '/admin',
@@ -118,6 +129,11 @@ export function createApp() {
             res.setHeader('Cache-Control', 'no-store');
             res.setHeader('Content-Security-Policy', ADMIN_SPA_CSP);
           }
+          if (filePath.endsWith('build-info.json')) {
+            // Must never be cached: it is how clients detect a new deployment.
+            res.setHeader('Cache-Control', 'no-store');
+          }
+          res.setHeader('X-App-Build', adminBuildId());
         },
       })
     );
@@ -125,6 +141,7 @@ export function createApp() {
     app.get(/^\/admin\/(?!api\/).*/, (_req, res) => {
       res.setHeader('Cache-Control', 'no-store');
       res.setHeader('Content-Security-Policy', ADMIN_SPA_CSP);
+      res.setHeader('X-App-Build', adminBuildId());
       res.sendFile(path.join(adminDist, 'index.html'));
     });
   } else {
@@ -146,6 +163,7 @@ export function createApp() {
     PET_APP_FRAME +
     "; base-uri 'self'; form-action 'self'";
   const petDist = config.paths.petAppDist;
+  const petBuildId = () => getAppBuild('pet').buildId || 'unknown';
   if (fs.existsSync(path.join(petDist, 'index.html'))) {
     app.use(
       '/app',
@@ -157,12 +175,19 @@ export function createApp() {
             res.setHeader('Cache-Control', 'no-store');
             res.setHeader('Content-Security-Policy', PET_APP_CSP);
           }
+          if (filePath.endsWith('build-info.json')) {
+            res.setHeader('Cache-Control', 'no-store');
+          }
+          // Lets anyone (support, monitoring, curl) confirm which build this
+          // server is handing out without reading a single asset.
+          res.setHeader('X-App-Build', petBuildId());
         },
       })
     );
     app.get(/^\/app\/(?!api\/).*/, (_req, res) => {
       res.setHeader('Cache-Control', 'no-store');
       res.setHeader('Content-Security-Policy', PET_APP_CSP);
+      res.setHeader('X-App-Build', petBuildId());
       res.sendFile(path.join(petDist, 'index.html'));
     });
   } else {
@@ -170,13 +195,22 @@ export function createApp() {
       res
         .status(503)
         .type('text/plain')
-        .send('PET app build not found. Run: npm run build:pet');
+        .send(
+          'PET app build not found on this machine.\n' +
+            'Run:  npm run build        (or: npm start — builds, then serves)\n'
+        );
     });
   }
 
   // Convenience: bare root lands on the PET operations app (the control-plane
-  // admin panel stays at /admin). 302 so nothing caches it.
-  app.get('/', (_req, res) => res.redirect(302, '/app/'));
+  // admin panel stays at /admin). 302, never cached — and the response also
+  // clears this origin's HTTP cache, which is what removes an already-cached
+  // old app shell from browsers/phones after an upgrade.
+  app.get('/', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Clear-Site-Data', '"cache"');
+    res.redirect(302, '/app/');
+  });
 
   app.use('/admin/api', notFoundHandler);
   app.use(notFoundHandler);

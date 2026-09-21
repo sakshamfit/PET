@@ -6,6 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+!.env.production.example
 
 # Desktop packaging output
 release/
@@ -23,6 +24,9 @@ server/*.db-shm
 
 # Electron build caches
 out/
+
+# Server logs (service stdout/stderr on the office PC)
+logs/
 
 # Desktop build-time config (written by write-build-config.mjs from env)
 electron/build-config.json

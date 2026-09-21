@@ -10,6 +10,11 @@
  * Existing Main Admins are never overwritten.
  */
 
+// Loads .env.production / .env before anything reads configuration. Must be
+// the first import so that C:\PET\data\... (production paths) are in effect
+// and this command never touches the wrong database.
+import { envLoadInfo } from '../src/lib/env-file.js';
+
 import config from '../src/config.js';
 import { initPetDb, getPetDb, closePetDb } from '../src/pet/db.js';
 import { hashPassword, generateTemporaryPassword, randomId } from '../src/lib/crypto.js';
