@@ -25,6 +25,7 @@ export type PetBuildInfo = {
 };
 
 declare const __PET_BUILD__: PetBuildInfo | undefined;
+declare const __PET_STATIC_PREVIEW__: boolean | undefined;
 
 const FALLBACK: PetBuildInfo = {
   version: '0.0.0',
@@ -33,6 +34,13 @@ const FALLBACK: PetBuildInfo = {
   sourceHash: null,
   builtAt: new Date(0).toISOString(),
 };
+
+/**
+ * True when this bundle was built by `vite.pet-vercel.config.ts` — a static
+ * host (Vercel) with no PET server next to it. The real deployment
+ * (`npm run build:pet` + the Express server) is never a static preview.
+ */
+export const STATIC_PREVIEW = typeof __PET_STATIC_PREVIEW__ !== 'undefined' && !!__PET_STATIC_PREVIEW__;
 
 /** The build this bundle was compiled from (injected by Vite `define`). */
 export const BUILD: PetBuildInfo =
@@ -158,3 +166,25 @@ export function UpdateBanner({ watch }: { watch: BuildWatch }) {
     </div>
   );
 }
+
+/**
+ * Shown only by the static preview build (vite.pet-vercel.config.ts).
+ *
+ * The PET platform is a client for a server that lives on the Trust's machine
+ * (Express + SQLite, docs/PET/13). A static host such as Vercel can serve the
+ * interface but never that server, so signing in here is impossible — and the
+ * app says so in one line instead of letting the login form fail with a
+ * generic network error that looks like a bug.
+ */
+export function StaticPreviewNotice() {
+  if (!STATIC_PREVIEW) return null;
+  return (
+    <div className="sticky top-0 z-50 bg-pet-900 px-4 py-2 text-center text-[11px] leading-snug text-pet-100">
+      <strong className="font-bold text-white">Interface preview only.</strong>{' '}
+      The PET data server runs on the Trust&apos;s office PC, not on this host — sign-in is
+      unavailable until this build points at it.
+    </div>
+  );
+}
+
+

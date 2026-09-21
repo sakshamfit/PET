@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { petAuth, PetApiFailure } from '../../../src/services/petApi';
 import { Field } from '../ui';
-import { BuildStamp } from '../build';
+import { BuildStamp, STATIC_PREVIEW } from '../build';
 
 export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [email, setEmail] = useState('');
@@ -64,6 +64,11 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
           </div>
           <h1 className="text-xl font-bold text-white">Purvanchal Education Trust</h1>
           <p className="mt-1 text-sm text-pet-100/70">Organization &amp; Field Operations</p>
+          {STATIC_PREVIEW ? (
+            <p className="mt-3 inline-block rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-pet-100">
+              Interface preview — no data server on this host
+            </p>
+          ) : null}
         </div>
 
         {mustChange ? (

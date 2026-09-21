@@ -29,6 +29,9 @@ export default defineConfig(({ command }) => {
     plugins: [react(), tailwindcss(), buildStamp],
     define: {
       __PET_BUILD__: JSON.stringify(build),
+      // The office-server build always has its API beside it; only
+      // vite.pet-vercel.config.ts (static preview) sets this to true.
+      __PET_STATIC_PREVIEW__: JSON.stringify(false),
     },
     resolve: {
       alias: {

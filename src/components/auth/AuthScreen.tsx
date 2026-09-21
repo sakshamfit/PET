@@ -11,6 +11,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
+import { BuildStamp } from '../../build';
 
 export const AuthScreen: React.FC = () => {
   const { db, loginPrincipal, loginTeacher } = useSchool();
@@ -280,6 +281,20 @@ export const AuthScreen: React.FC = () => {
             </form>
           </div>
         )}
+      </div>
+
+      {/*
+        Build identity, on the screen everyone sees first.
+        Until now the stamp lived only behind the login (sidebar footer /
+        Settings → About), so "am I looking at the new build?" could not be
+        answered without signing in — which is how a deployment can be perfectly
+        current while everybody believes it is old. Now it is one glance.
+      */}
+      <div className="relative z-10 mt-6 text-center">
+        <BuildStamp />
+        <p className="mt-1 text-[10px] text-[#a1a1a6]">
+          Compare with <span className="font-mono">/build-info.json</span> on this URL
+        </p>
       </div>
     </div>
   );
