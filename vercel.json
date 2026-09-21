@@ -11,15 +11,27 @@
   "headers": [
     {
       "source": "/",
-      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
     },
     {
       "source": "/index.html",
-      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
     },
     {
       "source": "/build-info.json",
-      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
     },
     {
       "source": "/manifest.json",
@@ -35,19 +47,35 @@
     },
     {
       "source": "/app",
-      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
     },
     {
       "source": "/app/",
-      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
     },
     {
       "source": "/app/index.html",
-      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
     },
     {
       "source": "/app/build-info.json",
-      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
     },
     {
       "source": "/app/manifest.webmanifest",
