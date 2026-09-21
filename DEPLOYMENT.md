@@ -128,11 +128,23 @@ curl -s https://<your-app>/app/build-info.json   # → PET preview build
    Protection). The production/custom domain stays public; the generated
    `*.vercel.app` URLs do not.
 
-7. **Caches.** Shells and `build-info.json` are `no-store`, hashed assets are
-   immutable, so a new deployment cannot be masked by the CDN. A tab that loaded
-   *before* these headers existed may hold an old shell once —
-   <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>. Any tab open now shows an
-   **"Update now"** banner by itself when a newer build goes live.
+7. **Caches — the shell is `no-store` at both layers.** `Cache-Control` (browser)
+   *and* `CDN-Cache-Control` / `Vercel-CDN-Cache-Control` (Vercel's edge) are
+   `no-store` for `/`, `/index.html`, `/app/` and both `build-info.json` files;
+   hashed `/assets/*` are immutable. Was this airtight before? No — and that is
+   the one case that really did look like "Vercel shows the old build": the bare
+   `/` URL could be answered from a copy cached *before* these headers existed,
+   while a URL that had never been cached (`/app/`, `/?v=2`) showed the new build
+   immediately. If a check looks stale, prove it in one command:
+
+   ```bash
+   curl -s "https://<your-app>/build-info.json?v=$(date +%s)"   # cache-busted
+   ```
+
+   A tab/browser that stored the old shell before the headers landed keeps it
+   until a hard refresh once: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>
+   (or clear site data). Every tab open from now on shows an **"Update now"**
+   banner by itself when a newer build goes live.
 
 ### B. Firebase Hosting
 ```bash
