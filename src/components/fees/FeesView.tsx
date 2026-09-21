@@ -297,10 +297,10 @@ export const FeesView: React.FC<FeesViewProps> = ({
                       </span>
                     </div>
                     <p className="font-semibold text-[#1d1d1f] mt-1 text-sm">
-                      {tx.studentName} • {tx.className} (Roll #{tx.rollNumber})
+                      {tx.studentName} • {tx.className}
                     </p>
                     <p className="text-[11px] text-[#86868b] mt-0.5">
-                      Date: {formatDate(tx.paymentDate)} • Collected by: {tx.collectedBy}
+                      Date: {formatDate(tx.paymentDate)} • Collected by: {tx.recordedByName}
                     </p>
                     {tx.notes && <p className="text-[11px] text-[#86868b] mt-0.5">Ref: {tx.notes}</p>}
                   </div>

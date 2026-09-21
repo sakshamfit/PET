@@ -11,10 +11,16 @@
     "preview": "vite preview --port=3000 --host=0.0.0.0",
     "dev:admin": "vite --config vite.admin.config.ts --port=3001 --host=0.0.0.0",
     "build:admin": "vite build --config vite.admin.config.ts",
+    "dev:pet": "vite --config vite.pet.config.ts --port=3002 --host=0.0.0.0",
+    "build:pet": "vite build --config vite.pet.config.ts",
     "server:dev": "node server/src/index.js",
     "server:start": "node server/src/index.js",
     "server:bootstrap": "node server/scripts/bootstrap.js",
     "server:backup": "node server/scripts/backup.js",
+    "pet:bootstrap": "node server/scripts/pet-bootstrap.js",
+    "pet:backup": "node server/scripts/pet-backup.js",
+    "pet:backup:weekly": "node server/scripts/pet-backup.js --weekly",
+    "pet:backup:monthly": "node server/scripts/pet-backup.js --monthly",
     "server:test": "node --test \"server/test/*.test.js\"",
     "desktop": "electron .",
     "desktop:build": "vite build && npx electron-builder",
@@ -60,6 +66,8 @@
     "@capacitor/cli": "^7.6.9",
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
     "electron": "^37.2.3",
     "electron-builder": "^26.0.12",
@@ -98,7 +106,6 @@
     "asarUnpack": [
       "assets/icon.png"
     ],
-    "npmRebuild": false,
     "win": {
       "target": [
         "nsis"

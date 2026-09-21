@@ -41,6 +41,7 @@ export const PrintableMarksheetModal: React.FC<PrintableMarksheetModalProps> = (
       parentPhone: '',
       academicYear: result.academicYear,
       status: 'active' as const,
+      admissionDate: '',
       createdAt: '',
     };
 

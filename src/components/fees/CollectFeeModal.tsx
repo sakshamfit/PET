@@ -22,7 +22,7 @@ export const CollectFeeModal: React.FC<CollectFeeModalProps> = ({
   onClose,
   student,
 }) => {
-  const { db, recordFeePayment } = useSchool();
+  const { db, recordFeeTransaction } = useSchool();
 
   if (!isOpen || !student) return null;
 
@@ -50,11 +50,10 @@ export const CollectFeeModal: React.FC<CollectFeeModalProps> = ({
     e.preventDefault();
     if (amount <= 0) return;
 
-    recordFeePayment({
+    recordFeeTransaction({
       studentId: student.id,
       amount: Number(amount),
       paymentMethod,
-      receiptNumber,
       notes,
       paymentDate,
     });

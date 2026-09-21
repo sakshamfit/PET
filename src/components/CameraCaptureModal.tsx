@@ -6,6 +6,7 @@ interface CameraCaptureModalProps {
   onClose: () => void;
   onCapture: (imageDataUrl: string) => void;
   studentName?: string;
+  title?: string;
 }
 
 export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
@@ -13,6 +14,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   onClose,
   onCapture,
   studentName,
+  title,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -149,7 +151,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
               <Camera className="h-4 w-4" />
             </div>
             <h3 className="font-semibold text-sm text-[#1d1d1f]">
-              {studentName ? `Photo: ${studentName}` : 'Capture Photo'}
+              {title || (studentName ? `Photo: ${studentName}` : 'Capture Photo')}
             </h3>
           </div>
           <button

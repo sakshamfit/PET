@@ -19,6 +19,7 @@ import deviceRoutes from './routes/devices.js';
 import releaseRoutes from './routes/releases.js';
 import healthRoutes from './routes/health.js';
 import adminApiRoutes from './routes/admin/index.js';
+import petApiRoutes from './pet/routes/index.js';
 
 /**
  * CORS: exact-origin allowlist only (no wildcards in production).
@@ -59,21 +60,36 @@ export function createApp() {
     helmet({
       contentSecurityPolicy: false, // Admin SPA sets its own; API returns JSON only.
       crossOriginEmbedderPolicy: false,
+      // In development the API may be embedded in a sandboxed live-preview
+      // iframe (e2b). Frame blocking stays on in production and test.
+      frameguard: config.nodeEnv === 'development' ? false : undefined,
     })
   );
   // Explicitly safe headers for API consumers.
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
+    if (config.nodeEnv !== 'development') res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'no-referrer');
     next();
   });
 
   app.use(corsMiddleware);
+
+  // PET upload/sync endpoints accept larger bodies (validated + size-capped
+  // again in the upload service). Mounted before the global 200kb parser
+  // so only these paths get the raised limit.
+  app.use('/api/uploads', express.json({ limit: '32mb' }));
+  app.use('/api/sync', express.json({ limit: '4mb' }));
   app.use(express.json({ limit: '200kb' }));
 
   // Health is deliberately unauthenticated for load balancers/monitors.
   app.use('/', healthRoutes);
+
+  // PET operational API (Purvanchal Education Trust). Mounted before the
+  // control-plane routes; the PET router terminates /api paths itself.
+  // pet.db is initialized in index.js (and test harnesses) before boot;
+  // if it is unavailable, service calls surface a sanitized 500.
+  app.use('/api', apiLimiter, petApiRoutes);
 
   // API rate limiting (sits above route-specific stricter limiters).
   app.use('/auth', apiLimiter, authRoutes);
@@ -83,6 +99,13 @@ export function createApp() {
   app.use('/admin/api', apiLimiter, adminApiRoutes);
 
   // Admin SPA (separate React build served same-origin → no CORS needed).
+  // Same frame-ancestors treatment as /app: strict in production, relaxed in
+  // development so sandboxed iframe previews render.
+  const ADMIN_FRAME = config.nodeEnv !== 'development' ? "; frame-ancestors 'none'" : '';
+  const ADMIN_SPA_CSP =
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'" +
+    ADMIN_FRAME +
+    "; base-uri 'self'; form-action 'self'";
   const adminDist = config.paths.adminDist;
   if (fs.existsSync(path.join(adminDist, 'index.html'))) {
     app.use(
@@ -93,10 +116,7 @@ export function createApp() {
         setHeaders(res, filePath) {
           if (filePath.endsWith('.html')) {
             res.setHeader('Cache-Control', 'no-store');
-            res.setHeader(
-              'Content-Security-Policy',
-              "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-            );
+            res.setHeader('Content-Security-Policy', ADMIN_SPA_CSP);
           }
         },
       })
@@ -104,10 +124,7 @@ export function createApp() {
     // SPA fallback for client-side routes (excluding the API namespace).
     app.get(/^\/admin\/(?!api\/).*/, (_req, res) => {
       res.setHeader('Cache-Control', 'no-store');
-      res.setHeader(
-        'Content-Security-Policy',
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-      );
+      res.setHeader('Content-Security-Policy', ADMIN_SPA_CSP);
       res.sendFile(path.join(adminDist, 'index.html'));
     });
   } else {
@@ -118,6 +135,48 @@ export function createApp() {
         .send('Admin panel build not found. Run: npm run build:admin');
     });
   }
+
+  // PET operations web app (separate React build served same-origin).
+  // frame-ancestors 'none' is production-hardening; in development the app is
+  // shown inside a sandboxed preview iframe, so the directive must be relaxed
+  // or the browser renders nothing (blank page).
+  const PET_APP_FRAME = config.nodeEnv !== 'development' ? "; frame-ancestors 'none'" : '';
+  const PET_APP_CSP =
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: blob:; connect-src 'self'" +
+    PET_APP_FRAME +
+    "; base-uri 'self'; form-action 'self'";
+  const petDist = config.paths.petAppDist;
+  if (fs.existsSync(path.join(petDist, 'index.html'))) {
+    app.use(
+      '/app',
+      express.static(petDist, {
+        index: 'index.html',
+        maxAge: '1h',
+        setHeaders(res, filePath) {
+          if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-store');
+            res.setHeader('Content-Security-Policy', PET_APP_CSP);
+          }
+        },
+      })
+    );
+    app.get(/^\/app\/(?!api\/).*/, (_req, res) => {
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('Content-Security-Policy', PET_APP_CSP);
+      res.sendFile(path.join(petDist, 'index.html'));
+    });
+  } else {
+    app.get(/^\/app\/?$/, (_req, res) => {
+      res
+        .status(503)
+        .type('text/plain')
+        .send('PET app build not found. Run: npm run build:pet');
+    });
+  }
+
+  // Convenience: bare root lands on the PET operations app (the control-plane
+  // admin panel stays at /admin). 302 so nothing caches it.
+  app.get('/', (_req, res) => res.redirect(302, '/app/'));
 
   app.use('/admin/api', notFoundHandler);
   app.use(notFoundHandler);

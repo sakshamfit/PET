@@ -53,6 +53,14 @@ export default defineConfig(() => {
       // Allow the sandboxed live-preview host (*.e2b.app) to load the dev server.
       // Vite rejects unknown Host headers with HTTP 403 by default.
       allowedHosts: ['.e2b.app'],
+      // The PET operational API (Express) runs on :8080 in development;
+      // the browser only ever speaks same-origin relative /api URLs.
+      proxy: {
+        '/api': {
+          target: process.env.PET_API_DEV_TARGET || 'http://localhost:8080',
+          changeOrigin: false,
+        },
+      },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',

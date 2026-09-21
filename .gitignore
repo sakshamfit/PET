@@ -14,6 +14,8 @@ dist_electron/
 # Control-plane server runtime data (never commit real databases or backups)
 server/data/
 server/backups/
+server/uploads/
+server/logs/
 server/public/admin/
 server/*.db
 server/*.db-wal
@@ -38,3 +40,4 @@ SchoolManagement-Android*.apk
 local.properties
 # Regenerated from dist/ by `npx cap sync android` on every build
 android/app/src/main/assets/public/
+server/public/app/

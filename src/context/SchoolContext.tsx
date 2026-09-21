@@ -16,6 +16,7 @@ import {
   SchoolInfo,
   AttendanceStatus,
   TeacherAttendanceStatus,
+  FeeStatus,
 } from '../types';
 import { INITIAL_SCHOOL_DATABASE } from '../data/initialData';
 import { generateTeacherCode, generateReceiptNumber, getTodayDateString } from '../utils/helpers';
@@ -99,7 +100,7 @@ interface SchoolContextType {
   updateClass: (id: string, data: Partial<ClassRoom>) => void;
   
   // Students
-  addStudent: (data: Partial<Student>) => Student;
+  addStudent: (data: Partial<Student> & { annualFee?: number; totalFee?: number }) => Student;
   updateStudent: (id: string, data: Partial<Student>) => void;
   archiveStudent: (id: string) => void;
   restoreStudent: (id: string) => void;
@@ -135,7 +136,7 @@ interface SchoolContextType {
   addPerformanceRecord: (data: Omit<PerformanceRecord, 'id' | 'createdAt'>) => void;
   
   // Academic Year & Promotion
-  promoteStudents: (fromClassId: string, toClassId: string, studentIds: string[]) => void;
+  promoteStudents: (fromClassId: string, toClassId: string, studentIds: string[], newAcademicYear?: string) => void;
   changeAcademicYear: (yearId: string) => void;
   addAcademicYear: (data: Omit<AcademicYear, 'id'>) => void;
   
@@ -657,7 +658,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   // Student Management
-  const addStudent = (data: Partial<Student>): Student => {
+  const addStudent = (data: Partial<Student> & { annualFee?: number; totalFee?: number }): Student => {
     const classItem = db.classes.find(c => c.id === data.classId);
     const className = classItem?.name || data.className || 'Class 1';
 
@@ -684,7 +685,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       createdAt: new Date().toISOString(),
     };
 
-    // Create default fee account
+    // Create default fee account (optionally seeded with an annual fee)
+    const initialTotalFee = Number(data.annualFee ?? data.totalFee ?? 24000) || 24000;
     const newFeeAccount: FeeAccount = {
       id: `fee_${newStudent.id}`,
       studentId: newStudent.id,
@@ -692,9 +694,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       rollNumber: newStudent.rollNumber,
       classId: newStudent.classId,
       className: newStudent.className,
-      totalFee: 24000,
+      totalFee: initialTotalFee,
       paidAmount: 0,
-      dueAmount: 24000,
+      dueAmount: initialTotalFee,
       status: 'due',
     };
 
@@ -968,7 +970,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       const newTotal = Number(totalFee);
       const newDue = Math.max(0, newTotal - (feeAccount.paidAmount || 0));
-      const newStatus = newDue === 0 ? 'paid' : (feeAccount.paidAmount || 0) > 0 ? 'partial' : 'due';
+      const newStatus: FeeStatus = newDue === 0 ? 'paid' : (feeAccount.paidAmount || 0) > 0 ? 'partial' : 'due';
 
       const updatedFA = { ...feeAccount, totalFee: newTotal, dueAmount: newDue, status: newStatus };
       saveFeeAccountToFirestore(updatedFA).catch(e => console.error(e));
@@ -1038,7 +1040,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   // Promotion
-  const promoteStudents = (fromClassId: string, toClassId: string, studentIds: string[]) => {
+  const promoteStudents = (fromClassId: string, toClassId: string, studentIds: string[], newAcademicYear?: string) => {
     const toClass = db.classes.find(c => c.id === toClassId);
     if (!toClass) return;
 
@@ -1049,6 +1051,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...s,
             classId: toClassId,
             className: toClass.name,
+            ...(newAcademicYear ? { academicYear: newAcademicYear } : {}),
             updatedAt: new Date().toISOString(),
           };
           saveStudentToFirestore(updated).catch(e => console.error(e));
