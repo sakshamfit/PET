@@ -56,6 +56,9 @@ npm start            # builds the current source, then serves on :8080
 **Full go-live runbook (office PC + your domain via Cloudflare Tunnel, free):**
 [docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)
 
+**plusoneco.in, in order (nameservers, first-run script, Team screen, PET Ops APK):**
+[docs/PET/14_OFFICE_ROLLOUT.md](./docs/PET/14_OFFICE_ROLLOUT.md)
+
 ### A. Vercel — the PET app at the root of the domain
 
 `vercel.json` runs **`npm run build:vercel`** (`scripts/vercel-build.mjs`), which

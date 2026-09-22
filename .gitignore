@@ -38,9 +38,19 @@ android/.gradle/
 android/build/
 android/.idea/
 android/local.properties
+# PET Ops shell (android-pet/). Same generated outputs, different project.
+android-pet/app/build/
+android-pet/app/release/
+android-pet/.gradle/
+android-pet/build/
+android-pet/.idea/
+android-pet/local.properties
+android-pet/capacitor-cordova-android-plugins/
+android-pet/app/src/main/assets/
 *.keystore
 *.jks
 SchoolManagement-Android*.apk
+PET-Ops*.apk
 local.properties
 # Regenerated from dist/ by `npx cap sync android` on every build
 android/app/src/main/assets/public/

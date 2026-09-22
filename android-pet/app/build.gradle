@@ -1,0 +1,78 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace "in.plusoneco.pet"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "in.plusoneco.pet"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 100
+        versionName "1.0.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    // Release signing for PET Ops. Separate from the legacy school APK so a
+    // school-app keystore is not required to sideload a test build.
+    //   PET_ANDROID_KEYSTORE_FILE / _PASSWORD / _KEY_ALIAS / _KEY_PASSWORD
+    // If none are set, assembleRelease is debug-signed so the APK still
+    // installs. Do not distribute that build — see docs/PET/14_OFFICE_ROLLOUT.md.
+    signingConfigs {
+        release {
+            def ksFile = System.getenv('PET_ANDROID_KEYSTORE_FILE') ?: project.findProperty('PET_ANDROID_KEYSTORE_FILE')
+            def ksStorePassword = System.getenv('PET_ANDROID_KEYSTORE_PASSWORD') ?: project.findProperty('PET_ANDROID_KEYSTORE_PASSWORD')
+            def ksKeyAlias = System.getenv('PET_ANDROID_KEY_ALIAS') ?: project.findProperty('PET_ANDROID_KEY_ALIAS')
+            def ksKeyPassword = System.getenv('PET_ANDROID_KEY_PASSWORD') ?: project.findProperty('PET_ANDROID_KEY_PASSWORD')
+            if (ksFile && ksStorePassword && ksKeyAlias && ksKeyPassword) {
+                storeFile file(ksFile)
+                storePassword ksStorePassword
+                keyAlias ksKeyAlias
+                keyPassword ksKeyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (signingConfigs.release.storeFile != null) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

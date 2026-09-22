@@ -33,7 +33,9 @@ export function AdminDashboardPage({ navigate }: { navigate: (r: string) => void
         <StatCard label="Tests Done" value={kpis.tests_completed} sub="completions" />
         <StatCard label="Selected" value={kpis.selected_students} sub="incl. waitlist" />
         <StatCard label="Enrolled" value={kpis.enrolled_students} sub="students" />
-        <StatCard label="Employees" value={kpis.active_employees} sub="active" />
+        <button className="text-left" onClick={() => navigate('team')} title="Open the Team screen">
+          <StatCard label="Employees" value={kpis.active_employees} sub="active · manage team" />
+        </button>
         <StatCard label="Visits Today" value={kpis.todays_field_visits} />
         <StatCard label="Open Tasks" value={kpis.pending_tasks} sub={data.overdue_tasks ? `${data.overdue_tasks} overdue` : undefined} />
         <StatCard label="New Forms" value={kpis.new_website_forms} sub="website" />
