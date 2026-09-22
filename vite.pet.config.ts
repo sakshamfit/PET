@@ -21,6 +21,9 @@ export default defineConfig(({ command }) => {
     root: __dirname,
     version: process.env.APP_VERSION || '1.0.0',
     devMode: command !== 'build',
+    // Same idea as the static build: build-info.json says which deployment it
+    // belongs to, so "which build, on which host?" is one curl away.
+    extra: { deployment: 'office-server', api: 'same-origin /api' },
   });
 
   return {
@@ -32,6 +35,10 @@ export default defineConfig(({ command }) => {
       // The office-server build always has its API beside it; only
       // vite.pet-vercel.config.ts (static preview) sets this to true.
       __PET_STATIC_PREVIEW__: JSON.stringify(false),
+      __PET_BUILD_INFO_URL__: JSON.stringify('/app/build-info.json'),
+      // Served by the PET server itself: the API is same-origin, and there is
+      // nothing for anyone to configure.
+      __PET_HOSTED_STATIC__: JSON.stringify(false),
     },
     resolve: {
       alias: {

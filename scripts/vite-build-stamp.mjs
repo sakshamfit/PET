@@ -16,11 +16,17 @@
 import { createBuildInfo } from '../server/src/lib/source-hash.js';
 
 /**
- * @param {{ app: string, root: string, version: string, devMode?: boolean }} opts
+ * @param {{ app: string, root: string, version: string, devMode?: boolean,
+ *           extra?: Record<string, unknown> }} opts
+ *   `extra` adds facts about the *deployment* to the stamp — which host it is
+ *   for, which API it talks to (`{ deployment: 'vercel-static', api: '…' }`).
+ *   build-info.json is the artefact that answers "what is actually live?", and
+ *   during the "Vercel shows the old app" incident the honest answer to "what
+ *   is this deployment?" was not in it. Now it is.
  * @returns {{ build: import('../server/src/lib/source-hash.js').BuildInfo, plugin: import('vite').Plugin }}
  */
-export function makeBuildStamp({ app, root, version, devMode = false }) {
-  const real = createBuildInfo({ root, app, version });
+export function makeBuildStamp({ app, root, version, devMode = false, extra = {} }) {
+  const real = { ...createBuildInfo({ root, app, version }), ...extra };
 
   // In dev the app is rebuilt by Vite on every keystroke; a stamped id would
   // be noise, and the client-side "newer build" watcher must stay quiet.

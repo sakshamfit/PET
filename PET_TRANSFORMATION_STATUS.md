@@ -1,24 +1,28 @@
 # PET Transformation Status
 
-Last updated: 2026-09-21 (backend phases 0–16 complete + pet-web SPA milestone
-+ build-freshness hardening and the Option 2 go-live kit)
+Last updated: 2026-09-22 (backend phases 0–16 complete + pet-web SPA milestone
++ build-freshness hardening + the Option 2 go-live kit + Vercel now deploys the
+PET app itself, at the root)
 
 ## Current Phase
 
 Backend: Phases 0–16 COMPLETE and verified (**88/88** server tests). Frontend: PET web app
 SPA (`pet-web/`) COMPLETE as an end-to-end milestone — mobile-first React app for Main Admin
-+ Employee served at `/app/` with the real API. **Deployment: ready to go live** — the
++ Employee, served by the office server at `/app/` with the real API, and published by Vercel
++ at `/` (see "Why the Vercel URL never showed the PET app" below). **Deployment: ready to go live** — the
 build-freshness hardening and the Option 2 (office PC + Cloudflare Tunnel) kit are complete
 and verified; what remains is running the runbook on the Trust's office PC.
 
 Next: execute [`docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md`](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)
-on the office PC (services + tunnel + first Main Admin), Phase 18 backup *schedule* activation
+on the office PC (services + tunnel + first Main Admin), set `PET_API_BASE` on the Vercel
+project and that deployment's origin in the server's `CORS_ORIGINS` (then
+`npm run verify:deploy -- --url <deployment>` must come back green), Phase 18 backup *schedule* activation
 on that machine, Phase 17 remainder (legacy UI retirement / data migration), Phase 19 Android
 wrapper per spec 12, Phase 20–22 final security + testing loops against real data.
 
-## Why the Vercel URL never showed the PET app (fixed 2026-09-21)
+## Why the Vercel URL never showed the PET app (fixed 2026-09-21, finished 2026-09-22)
 
-**The finding.** Every Vercel project on this repository builds from the root
+**The finding.** Every Vercel project on this repository built from the root
 `vercel.json`, which ran `npm run build:legacy` → `dist/`. That artefact is the
 legacy M.S. Public School portal (`src/`) — it has never contained a single line
 of `pet-web/`. So "Vercel still shows the old build" was literal and structural:
@@ -27,24 +31,43 @@ rebuilt the same legacy portal. Deployment freshness was fine the whole time
 (the stamps/headers/no-cache work of PR #10 proves it); **the wrong app was
 being deployed.**
 
-**The fix.** One Vercel deployment now carries both apps:
+**The state before this fix (verified live 2026-09-22).** The first attempt at a
+fix put *both* apps on one deployment — the portal at `/`, the PET app at
+`/app/` — so the URL people actually open, and the one in this repository's
+homepage, still led to the school portal. Both of its halves were correct and
+the thing was still wrong.
+
+**The fix — Vercel deploys the PET app, at the root.**
 
 | Path | App | Built by |
 | :-- | :-- | :-- |
-| `/` | legacy M.S. Public School portal (unchanged) | `npm run build:legacy` → `dist/` (fatal on failure) |
-| `/app/` | PET field-operations app — **interface preview** | `npm run build:pet-vercel` → `dist/app/` (best effort) |
+| `/` | **PET field-operations app** | `npm run build:pet-vercel` → `dist/` (fatal on failure) |
+| `/app/…` | 308 redirect → `/` | keeps old bookmarks working |
 
-The preview is decorated honestly: it sets `__PET_STATIC_PREVIEW__`, so the app
-prints "Interface preview only — the PET data server runs on the Trust's office
-PC" instead of failing silently at sign-in, and it can be pointed at the real
-server by setting `PET_API_BASE` at build time (Vercel → Settings → Environment
-Variables). The full PET platform still lives on the office PC per doc 13.
+* `scripts/vercel-build.mjs` builds one app and then **checks the artefact**:
+  `dist/build-info.json` must say `"app": "pet"`, the shell must carry
+  `<meta name="pet-build">` and must not be the school portal. A mismatch stops
+  the deployment, so the previous (working) one stays live.
+* `/build-info.json` records what the deployment *is*: app, commit, build id, and
+  `api` — the PET server it was built for (`"none (interface preview)"` when
+  there is none). One curl answers the question that cost days.
+* **Wiring:** `PET_API_BASE` (Vercel → Settings → Environment Variables) bakes in
+  the office server's public URL; without it the login screen offers "Connect to
+  your PET server" and remembers the address on the device. A value that cannot
+  work (localhost, plain http, wrong scheme) fails the build with instructions.
+* The old passive "Interface preview only" strip is gone — it stated a dead end
+  without offering a way out.
+* `npm run verify:deploy -- --url <deployment>` checks the live URL from the
+  outside: which app it serves, whether the server answers `/health`, and whether
+  its `CORS_ORIGINS` allows that deployment origin (the failure that otherwise
+  shows up only as an opaque network error at sign-in).
+* The school portal remains the desktop/Android build and is still served by the
+  office server (`npm run build:legacy`) — it is only removed from Vercel.
 
 Verify from anywhere, no login:
 
 ```bash
-curl -s https://<the-app>/build-info.json       # legacy portal build
-curl -s https://<the-app>/app/build-info.json   # PET app build
+curl -s https://<the-app>/build-info.json     # → {"app":"pet", …}
 ```
 
 ## Build freshness & go-live (2026-09-21)

@@ -93,11 +93,34 @@ check('production build-config: HTTPS API URL, no localhost', () => {
 });
 
 check('legacy desktop web build (dist/) exists', () => {
-  if (!fs.existsSync(path.join(ROOT, 'dist', 'index.html'))) {
+  const indexFile = path.join(ROOT, 'dist', 'index.html');
+  if (!fs.existsSync(indexFile)) {
     const e = new Error('run npm run build:legacy first');
     e.level = 'warn';
     throw e;
   }
+  // dist/ is also where `npm run build:vercel` puts the PET Vercel deployment.
+  // Electron packages dist/**/*, so the wrong artefact here means shipping the
+  // wrong app inside the installer — check what it actually is, not just that
+  // something is there.
+  const html = fs.readFileSync(indexFile, 'utf8');
+  if (/<meta[^>]+name="pet-build"/i.test(html)) {
+    throw new Error(
+      'dist/ contains the PET Vercel deployment (from npm run build:vercel), not the legacy ' +
+        'desktop portal — packaging this would ship the PET app in the desktop installer. ' +
+        'Run: npm run build:legacy'
+    );
+  }
+  let app = null;
+  try {
+    app = JSON.parse(fs.readFileSync(path.join(ROOT, 'dist', 'build-info.json'), 'utf8')).app ?? null;
+  } catch {
+    /* unstamped/older build — the HTML check above is the authority */
+  }
+  if (app && app !== 'legacy') {
+    throw new Error(`dist/build-info.json says app="${app}", not "legacy" — run: npm run build:legacy`);
+  }
+  return app ? `app=${app}` : '';
 });
 
 check('PET operations app build exists and matches this checkout', () => {
@@ -132,7 +155,16 @@ check('no tracked .env / database files in git', () => {
   }
   const bad = tracked
     .split('\n')
-    .filter(f => /^\.env(?!\.example)/.test(f) || /\.(db|sqlite|sqlite3)$/i.test(f) || /service-?account.*\.json$/i.test(f));
+    // Real .env files are forbidden; `.example` templates are deliberately
+    // tracked (.gitignore un-ignores them) — the old pattern flagged
+    // `.env.production.example` and made this gate fail on every run, which is
+    // how a gate stops being read.
+    .filter(
+      f =>
+        (/^\.env(?!.*\.example$)/.test(f) && !/\.example$/.test(f)) ||
+        /\.(db|sqlite|sqlite3)$/i.test(f) ||
+        /service-?account.*\.json$/i.test(f)
+    );
   if (bad.length) throw new Error(`forbidden tracked files: ${bad.join(', ')}`);
 });
 

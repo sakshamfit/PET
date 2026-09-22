@@ -4,9 +4,28 @@
  */
 
 import { useState } from 'react';
+import { apiBaseHost } from '../../../src/services/petApiBase';
 import { petAuth, PetApiFailure } from '../../../src/services/petApi';
 import { Field } from '../ui';
-import { BuildStamp, STATIC_PREVIEW } from '../build';
+import { BuildStamp, HOSTED_STATIC } from '../build';
+import { ServerConnection } from '../connect';
+import { useApiBase } from '../runtime';
+
+/**
+ * Where does this copy of the app get its data? Stated on the login screen,
+ * because that is where the question is asked: a static deployment with no
+ * server configured cannot sign anyone in, and saying so beats a network error.
+ */
+function ConnectionPill() {
+  const apiBase = useApiBase();
+  // Office-server build: the API is on this very origin. Nothing to explain.
+  if (!HOSTED_STATIC) return null;
+  return (
+    <p className="mt-3 inline-block rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-pet-100">
+      {apiBase ? `Server: ${apiBaseHost(apiBase)}` : 'Not connected to a PET server yet'}
+    </p>
+  );
+}
 
 export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [email, setEmail] = useState('');
@@ -64,11 +83,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
           </div>
           <h1 className="text-xl font-bold text-white">Purvanchal Education Trust</h1>
           <p className="mt-1 text-sm text-pet-100/70">Organization &amp; Field Operations</p>
-          {STATIC_PREVIEW ? (
-            <p className="mt-3 inline-block rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-pet-100">
-              Interface preview — no data server on this host
-            </p>
-          ) : null}
+          <ConnectionPill />
         </div>
 
         {mustChange ? (
@@ -111,6 +126,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
             </div>
           </form>
         )}
+        <ServerConnection />
         <p className="mt-6 text-center text-xs text-pet-100/50">Private system — authorized PET staff only</p>
         <div className="mt-2 text-center">
           <BuildStamp className="!text-pet-100/40" />
