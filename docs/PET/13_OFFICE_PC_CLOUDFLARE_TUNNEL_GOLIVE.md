@@ -201,9 +201,10 @@ The console prints a **one-time temporary password** — write it down, it is
 never shown again. Sign in at `http://127.0.0.1:8080/app/` and you will be
 forced to set your own password immediately.
 
-Then create the ~30 employee accounts in the app: **Employees → add employee**.
-No password is ever displayed to an administrator; each employee gets a
-one-time credential and must change it on first login.
+Then create the ~30 employee accounts in the app: **Team → Add staff**
+([14_OFFICE_ROLLOUT.md](./14_OFFICE_ROLLOUT.md) Step 5). The one-time password
+is shown once on that screen and is not stored — copy it to the employee
+before closing the dialog. They must change it on first login.
 
 ---
 
@@ -315,8 +316,9 @@ data** (Wi-Fi off) and sign in. That is the go-live moment.
 5. Fixes need no redistribution: employees get the new build on their next
    visit, and anyone with the app already open sees **"Update now"**.
 
-Optional native APK wrapper (same code, Capacitor shell): see
-`DEPLOYMENT_GUIDE.md` §3b.
+Optional native APK wrapper (**PET Ops**, `in.plusoneco.pet`, not the legacy
+school APK): `npm run android:pet:init`, `android:pet:sync`, `android:pet:apk`.
+See [14_OFFICE_ROLLOUT.md](./14_OFFICE_ROLLOUT.md) Step 6.
 
 ---
 

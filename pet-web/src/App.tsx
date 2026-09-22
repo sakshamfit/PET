@@ -13,17 +13,19 @@ import { StudentsPage } from './pages/Students';
 import { TasksPage } from './pages/Tasks';
 import { VisitsPage } from './pages/Visits';
 import { ChatPage } from './pages/Chat';
+import { TeamPage } from './pages/Team';
 import { useAutoSync } from './pages/sync';
 import { BuildStamp, UpdateBanner, useBuildWatcher } from './build';
 
-type Route = 'dashboard' | 'students' | 'tasks' | 'visits' | 'chat';
+type Route = 'dashboard' | 'students' | 'tasks' | 'visits' | 'chat' | 'team';
 
-const NAV: Array<{ key: Route; label: string; icon: string }> = [
+const NAV: Array<{ key: Route; label: string; icon: string; adminOnly?: boolean }> = [
   { key: 'dashboard', label: 'Dashboard', icon: '⌂' },
   { key: 'students', label: 'Students', icon: '🎓' },
   { key: 'tasks', label: 'Tasks', icon: '✓' },
   { key: 'visits', label: 'Visits', icon: '🏫' },
   { key: 'chat', label: 'Chat', icon: '💬' },
+  { key: 'team', label: 'Team', icon: '👥', adminOnly: true },
 ];
 
 export default function App() {
@@ -69,6 +71,7 @@ export default function App() {
   }
 
   const isAdmin = user.role === 'main_admin';
+  const nav = NAV.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <div className="min-h-dvh pb-20 lg:pb-0">
@@ -95,7 +98,7 @@ export default function App() {
       {/* Desktop side nav + content */}
       <div className="mx-auto flex max-w-5xl gap-6">
         <nav className="sticky top-[57px] hidden h-[calc(100dvh-57px)] w-44 shrink-0 flex-col gap-1 py-4 lg:flex">
-          {NAV.map(n => (
+          {nav.map(n => (
             <button key={n.key}
               className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold ${route === n.key ? 'bg-pet-800 text-white' : 'text-slate-600 hover:bg-white'}`}
               onClick={() => setRoute(n.key)}>
@@ -113,8 +116,10 @@ export default function App() {
             <TasksPage />
           ) : route === 'visits' ? (
             <VisitsPage />
-          ) : (
+          ) : route === 'chat' ? (
             <ChatPage />
+          ) : (
+            <TeamPage />
           )}
         </main>
       </div>
@@ -122,7 +127,7 @@ export default function App() {
       {/* Mobile bottom nav */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-slate-200 bg-white/95 backdrop-blur lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {NAV.map(n => (
+        {nav.map(n => (
           <button key={n.key}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-bold ${route === n.key ? 'text-pet-800' : 'text-slate-400'}`}
             onClick={() => setRoute(n.key)}>

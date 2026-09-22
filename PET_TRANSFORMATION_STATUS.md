@@ -13,12 +13,14 @@ SPA (`pet-web/`) COMPLETE as an end-to-end milestone — mobile-first React app 
 build-freshness hardening and the Option 2 (office PC + Cloudflare Tunnel) kit are complete
 and verified; what remains is running the runbook on the Trust's office PC.
 
-Next: execute [`docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md`](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)
-on the office PC (services + tunnel + first Main Admin), set `PET_API_BASE` on the Vercel
-project and that deployment's origin in the server's `CORS_ORIGINS` (then
-`npm run verify:deploy -- --url <deployment>` must come back green), Phase 18 backup *schedule* activation
-on that machine, Phase 17 remainder (legacy UI retirement / data migration), Phase 19 Android
-wrapper per spec 12, Phase 20–22 final security + testing loops against real data.
+Next: execute [`docs/PET/14_OFFICE_ROLLOUT.md`](./docs/PET/14_OFFICE_ROLLOUT.md)
+on the office PC — Step 0 / 0B moves plusoneco.in onto Cloudflare without
+taking the existing Vercel hostnames down, then `pet-first-run.ps1`, the
+tunnel for `app.plusoneco.in`, and the Team screen. Doc 13 remains the tunnel
+reference. Phase 18 backup *schedule* activation is in that same rollout.
+Phase 19 Android wrapper is `android-pet/` (`in.plusoneco.pet`, PET Ops,
+`npm run android:pet:init|sync|apk`). Phase 17 remainder (legacy UI retirement
+/ data migration) and Phase 20–22 still follow go-live.
 
 ## Why the Vercel URL never showed the PET app (fixed 2026-09-21, finished 2026-09-22)
 
@@ -132,8 +134,9 @@ React app in `src/`, not at the PET app.
 - **PET web app**: React 19 + TypeScript + Vite at `pet-web/` (`npm run dev:pet` → :3002,
   `npm run build:pet` → `server/public/app/`, served same-origin at `/app/` by Express with
   its own CSP + SPA fallback). Mobile-first: bottom navigation on phones, sidebar on `lg`.
-  Auth-gated routes: dashboard / students / tasks / visits / chat, role-filtered
-  (Main Admin = `main_admin`).
+  Auth-gated routes: dashboard / students / tasks / visits / chat, plus **Team**
+  for Main Admin only (add staff, reset password, disable — one-time password
+  shown once and not stored). Role-filtered (Main Admin = `main_admin`).
 - **Legacy frontend**: React school-management app (`src/`), untouched except harmless
   latent-bug fixes uncovered when real `@types/react` was installed (details below).
 - **Server** (`server/`): Node + Express + better-sqlite3, extended in-place with the PET

@@ -178,19 +178,29 @@ the next visit.
 
 ### 3b. Native Android APK (optional wrapper)
 
-The repo includes a Capacitor Android shell. To wrap the **PET** app
-(the existing `android/` project currently points at the legacy school app):
+Two Capacitor projects live in this repo. Do not mix them up.
+
+| Project | App id | Name | Commands |
+|---|---|---|---|
+| `android/` | `com.sakshamfit.schoolmanagement` | School Management | `npm run android:apk` — legacy portal, not for field staff |
+| `android-pet/` | `in.plusoneco.pet` | **PET Ops** | `npm run android:pet:init` · `android:pet:sync` · `android:pet:apk` |
+
+PET Ops opens the live office URL (`https://app.plusoneco.in/app/` by default,
+override with `PET_ANDROID_SERVER_URL`). Signing uses `PET_ANDROID_KEYSTORE_*`.
+The full sequence, including the plusoneco.in nameserver move, is
+[14_OFFICE_ROLLOUT.md](./14_OFFICE_ROLLOUT.md) Step 6.
 
 ```bash
 # 1. One-time: create the signing keystore (keep it SAFELY with the Trust)
-keytool -genkey -v -keystore pet-release.keystore -alias pet-app -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkey -v -keystore pet-ops-release.keystore -alias pet-ops -keyalg RSA -keysize 2048 -validity 10000
 
-# 2. Point the wrapper at the PET app build by setting in capacitor.config.ts:
-#    webDir: 'server/public/app' and server: { url: 'https://app.purvanchaltrust.org', cleartext: false }
-npm run build:pet
-npx cap sync android
-cd android && ./gradlew assembleRelease
-# output: android/app/build/outputs/apk/release/app-release.apk  → sign with pet-release.keystore
+# 2. Build the PET Ops APK (does not touch android/)
+export PET_ANDROID_KEYSTORE_FILE=pet-ops-release.keystore
+export PET_ANDROID_KEYSTORE_PASSWORD='<keystore password>'
+export PET_ANDROID_KEY_ALIAS=pet-ops
+export PET_ANDROID_KEY_PASSWORD='<key password>'
+npm run android:pet:apk
+# output: PET-Ops.apk
 ```
 
 Distribute the APK by sharing the file (Drive/WhatsApp/USB) — Android will say
