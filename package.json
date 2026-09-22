@@ -10,6 +10,7 @@
     "serve": "npm start",
     "preview": "node scripts/start-pet.mjs",
     "verify:live": "node scripts/verify-live.mjs",
+    "verify:deploy": "node scripts/verify-deployment.mjs",
     "check:build": "node scripts/check-build.mjs",
     "dev": "npm run dev:pet",
     "dev:all": "node scripts/dev-all.mjs",
@@ -50,7 +51,8 @@
     "audit:prod": "node scripts/audit-prod.mjs",
     "release:check": "node scripts/release-check.mjs",
     "clean": "rm -rf dist release server/public",
-    "preview:legacy": "vite preview --port=3010 --host=0.0.0.0"
+    "preview:legacy": "vite preview --port=3010 --host=0.0.0.0",
+    "preview:pet-static": "vite preview --config vite.pet-vercel.config.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.9",

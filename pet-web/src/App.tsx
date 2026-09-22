@@ -14,7 +14,7 @@ import { TasksPage } from './pages/Tasks';
 import { VisitsPage } from './pages/Visits';
 import { ChatPage } from './pages/Chat';
 import { useAutoSync } from './pages/sync';
-import { BuildStamp, StaticPreviewNotice, UpdateBanner, useBuildWatcher } from './build';
+import { BuildStamp, UpdateBanner, useBuildWatcher } from './build';
 
 type Route = 'dashboard' | 'students' | 'tasks' | 'visits' | 'chat';
 
@@ -62,7 +62,6 @@ export default function App() {
   if (!signedIn || !user) {
     return (
       <>
-        <StaticPreviewNotice />
         <UpdateBanner watch={buildWatch} />
         <LoginPage onLoggedIn={() => setSignedIn(true)} />
       </>
@@ -73,7 +72,6 @@ export default function App() {
 
   return (
     <div className="min-h-dvh pb-20 lg:pb-0">
-      <StaticPreviewNotice />
       <UpdateBanner watch={buildWatch} />
       {/* Top bar */}
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">

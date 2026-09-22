@@ -56,38 +56,95 @@ npm start            # builds the current source, then serves on :8080
 **Full go-live runbook (office PC + your domain via Cloudflare Tunnel, free):**
 [docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)
 
-### A. Vercel — one deployment, both apps
+### A. Vercel — the PET app at the root of the domain
 
 `vercel.json` runs **`npm run build:vercel`** (`scripts/vercel-build.mjs`), which
-puts both applications on the same deployment:
+builds **one** application — the PET field-operations app (`pet-web/`) — into
+`dist/`, served at `/`.
 
 | Path | What it is | Built from | Failure behaviour |
 | :-- | :-- | :-- | :-- |
-| `/` | **M.S. Public School portal** — the school app people use daily | `src/` → `dist/` | **fatal**: a broken build must never replace the live site |
-| `/app/` | **PET field-operations app — interface preview** | `pet-web/` → `dist/app/` | best effort: if it fails, the portal still ships and the log says why |
+| `/` | **PET field-operations app** | `pet-web/` → `dist/` | **fatal**: a broken build leaves the previous deployment live |
+| `/app/…` | 308 redirect to `/` | — | keeps old bookmarks working |
 
-The PET platform itself is a *server* (Express + SQLite on the Trust's machine —
-see [doc 13](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)); a static host
-can serve its interface but never its data. That is why the preview says
-**"Interface preview only"** on screen and cannot sign anyone in. Point it at a
-real server by setting `PET_API_BASE` (Vercel → project → Settings → Environment
-Variables, e.g. `https://app.purvanchaltrust.org`) and redeploying.
+> **The M.S. Public School portal is no longer published on Vercel.** It still
+> builds and ships everywhere else it is used — the desktop app, the Android
+> package, and the office server (`npm run build:legacy`).
+
+**Why it is built this way.** Previously this file built the *legacy portal*
+into `dist/` and the PET app into `dist/app/`, "best effort". Every deployment
+therefore succeeded, reported a fresh commit, and contained an application that
+had never included a line of `pet-web/` — which is precisely what "Vercel still
+shows the old build" was: not staleness, but the wrong app, deployed reliably.
+`npm run build:vercel` now refuses to finish unless `dist/build-info.json` says
+`"app": "pet"` and the HTML shell carries the PET markers.
+
+#### Wiring the app to the PET server
+
+The PET platform is a **server** (Express + SQLite on the Trust's office PC — see
+[doc 13](./docs/PET/13_OFFICE_PC_CLOUDFLARE_TUNNEL_GOLIVE.md)). A static host can
+serve its interface, never its data, so the deployment needs to be told where the
+server is. Two ways, in order of preference:
+
+1. **Build-time (zero touch for staff)** — Vercel → project → Settings →
+   Environment Variables:
+
+   | Name | Value | Example |
+   | :-- | :-- | :-- |
+   | `PET_API_BASE` | public URL of the PET server | `https://app.purvanchaltrust.org` |
+
+   Redeploy. A bare hostname, a trailing slash and a missing `/api` are all
+   normalised; a value that cannot work (a `localhost` address, plain `http://`
+   for a remote host, a non-http scheme) **fails the build** with instructions
+   instead of shipping a bundle that cannot sign anyone in.
+
+2. **In the app** — with no `PET_API_BASE`, the login screen shows *"Connect to
+   your PET server"*. Staff (or you, on the phone) type the address once; it is
+   checked against `/health` and remembered on that device. A hosted build always
+   keeps a *Server: …* line with a **Change** button, so a device that once
+   connected to a since-moved tunnel URL is never stuck with it.
+
+**The server must allow this site.** On the office PC, in `.env.production`:
 
 ```bash
-npm run build:vercel   # exactly what Vercel runs — / and /app/ in dist/
-npm run preview:legacy # serve that dist/ locally and look at both
+CORS_ORIGINS=https://<your-deployment-domain>        # exact origins, no wildcards
 ```
 
-**Which build is this URL serving?** (no login needed)
+Without it the app loads and sign-in fails with an opaque network error and no
+server-side log. `npm run verify:deploy` checks this for you.
 
 ```bash
-curl -s https://<your-app>/build-info.json       # → legacy portal build
-curl -s https://<your-app>/app/build-info.json   # → PET preview build
+npm run build:vercel                                        # exactly what Vercel runs
+npm run preview:pet-static                                  # serve dist/ locally at /
+npm run verify:deploy -- --url https://<your-deployment>     # is the PET app live & wired?
+```
+
+**Which app is this URL serving?** (no login needed)
+
+```bash
+curl -s https://<your-app>/build-info.json
+# → {"app":"pet","deployment":"vercel-static","api":"https://app.example.org/api","commit":"…"}
 ```
 
 ### "Vercel still shows the old build" — checklist
 
-1. **Are you looking at a frozen URL?** Only a project's **production domain**
+Start with the one command that answers it end-to-end:
+
+```bash
+npm run verify:deploy -- --url https://<your-deployment>
+```
+
+1. **What does the deployment say it is?** `curl -s <url>/build-info.json`.
+   * `"app": "pet"` — the right app is deployed.
+   * `"app": "legacy"` — the deployment is current and contains the **wrong
+     application** (the school portal). That is the historical bug, not a cache:
+     check Vercel → project → Settings → **Build & Development Settings** is on
+     auto-detect (so the repo's `vercel.json` governs), and that the project is
+     connected to this repository's root.
+   * **404 / HTML instead of JSON** — what is deployed is not this build at all,
+     or the deployment is behind Vercel Authentication (see 6).
+
+2. **Are you looking at a frozen URL?** Only a project's **production domain**
    moves forward:
    * `https://<project>-<hash>-<team>.vercel.app` = one *specific* deployment —
      frozen forever, no matter how often you push.
@@ -98,24 +155,17 @@ curl -s https://<your-app>/app/build-info.json   # → PET preview build
 
    Open the production domain instead: Vercel → your project → **Domains**.
 
-2. **Which app do you expect at the root?** This repository holds two apps and
-   Vercel serves both, but at *different paths* — the school portal at `/` and
-   the PET app at `/app/` (see the table above). The PET app has never been at
-   `/`, and could not be: it needs the server in doc 13. If the plan is to move
-   the PET app to the root and the portal elsewhere, say so — it is a one-line
-   change in `vite.pet-vercel.config.ts` plus a redirect for the portal, and it
-   must be a deliberate decision, because teachers' bookmarks and the installed
-   PWA point at `/`.
+3. **One project should serve this app.** Earlier, several Vercel projects
+   (`pet`, `school-management-system`) built this repository, each producing its
+   own deployment of the same thing — two URLs that could disagree. Keep exactly
+   one project per domain; rename or delete the others rather than leaving two
+   "current" deployments of the same app.
 
-3. **Check the build id, don't guess.** The stamp is printed under the login card
-   on `/` (and in the PET app's header); the same value is in
-   `<meta name="legacy-build">` / `<meta name="pet-build">` and in the JSON above.
-   `buildId` = `<commit>-<source-hash>`; compare the commit with the Vercel
-   deployment and `git rev-parse --short=8 HEAD`.
-
-4. **Two Vercel projects build this repository** — `pet` and
-   `school-management-system` — and both run the same build. Make sure you are
-   looking at the domain of the project you are watching.
+4. **Check the build id, don't guess.** The stamp is under the login card (and in
+   the app header); the same value is in `<meta name="pet-build">` and in
+   `/build-info.json`. `buildId` = `<commit>-<source-hash>`; compare the commit
+   with the Vercel deployment and `git rev-parse --short HEAD`. The stamp also
+   names the server the app talks to.
 
 5. **A failed build never replaces a live site.** Vercel keeps the previous
    deployment, which is deliberate — but it means the site can sit on an older
@@ -126,20 +176,16 @@ curl -s https://<your-app>/app/build-info.json   # → PET preview build
 6. **Signed-out visitors may see Vercel's login, not your app.** `*.vercel.app`
    team URLs can sit behind Vercel Authentication (Settings → Deployment
    Protection). The production/custom domain stays public; the generated
-   `*.vercel.app` URLs do not.
+   `*.vercel.app` URLs do not. Staff on a URL that asks them to log in to Vercel
+   are hitting this, not a broken build.
 
 7. **Caches — the shell is `no-store` at both layers.** `Cache-Control` (browser)
    *and* `CDN-Cache-Control` / `Vercel-CDN-Cache-Control` (Vercel's edge) are
-   `no-store` for `/`, `/index.html`, `/app/` and both `build-info.json` files;
-   hashed `/assets/*` are immutable. Was this airtight before? No: nothing in a
-   response told *any* layer not to store it, so a bare path like `/` or
-   `/build-info.json` could be answered from a copy cached earlier — which is
-   indistinguishable from "Vercel shows the old build" — while a URL that had
-   never been cached (`/app/`, `/?v=2`) showed the new build immediately. (In our
-   own verification the stale copy came from an intermediate fetcher, not the
-   edge — which is exactly the point: without explicit directives, you cannot
-   tell whose cache answered. Now the browser *and* the edge are told.)
-   If a check looks stale, prove it in one command:
+   `no-store` for `/`, `/index.html` and `/build-info.json`; hashed `/assets/*`
+   are immutable. Nothing in a response used to tell *any* layer not to store it,
+   so a bare path like `/` could be answered from a copy cached earlier — which
+   is indistinguishable from "Vercel shows the old build". If a check looks
+   stale, prove it in one command:
 
    ```bash
    curl -s "https://<your-app>/build-info.json?v=$(date +%s)"   # cache-busted

@@ -9,9 +9,16 @@
  *   2. the build writes `build-info.json` next to the bundle;
  *   3. this module shows that id in the UI and polls the server for it, so a
  *      client that is behind says so, out loud, with a Reload button.
+ *
+ * The stamp also names the server when one is configured remotely, so "which
+ * build, which server?" is answerable by looking at the screen — including on
+ * the deployment's own /build-info.json, which now records which app and which
+ * API it was built for (see scripts/vite-build-stamp.mjs).
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { apiBaseHost } from '../../src/services/petApiBase';
+import { useApiBase } from './runtime';
 
 export type PetBuildInfo = {
   schema?: number;
@@ -26,6 +33,10 @@ export type PetBuildInfo = {
 
 declare const __PET_BUILD__: PetBuildInfo | undefined;
 declare const __PET_STATIC_PREVIEW__: boolean | undefined;
+/** Where this deployment keeps its build descriptor, injected per build. */
+declare const __PET_BUILD_INFO_URL__: string | undefined;
+/** True when a static host serves this bundle (see __PET_HOSTED_STATIC__). */
+declare const __PET_HOSTED_STATIC__: boolean | undefined;
 
 const FALLBACK: PetBuildInfo = {
   version: '0.0.0',
@@ -36,11 +47,22 @@ const FALLBACK: PetBuildInfo = {
 };
 
 /**
- * True when this bundle was built by `vite.pet-vercel.config.ts` — a static
- * host (Vercel) with no PET server next to it. The real deployment
- * (`npm run build:pet` + the Express server) is never a static preview.
+ * True when this bundle was built for a static host with no PET server of its
+ * own — `vite.pet-vercel.config.ts` without `PET_API_BASE`. The real
+ * deployment (`npm run build:pet` + the Express server) is never a static
+ * preview, and neither is a static build that was pointed at a real server:
+ * in that case there is a server, it is just not on this host.
  */
 export const STATIC_PREVIEW = typeof __PET_STATIC_PREVIEW__ !== 'undefined' && !!__PET_STATIC_PREVIEW__;
+
+/**
+ * True when this bundle is served by a static host (Vercel) rather than by the
+ * PET server itself. There, "which server does this app talk to?" is a real
+ * question with a changeable answer — and the connect screen must stay
+ * reachable even when an answer was baked in at build time, or a device that
+ * once connected to a since-moved tunnel URL would be stuck with it.
+ */
+export const HOSTED_STATIC = typeof __PET_HOSTED_STATIC__ !== 'undefined' && !!__PET_HOSTED_STATIC__;
 
 /** The build this bundle was compiled from (injected by Vite `define`). */
 export const BUILD: PetBuildInfo =
@@ -65,7 +87,8 @@ function buildInfoUrl(): string {
   } catch {
     /* not running from a URL (unit tests / SSR) */
   }
-  return '/app/build-info.json';
+  // Fallback for when the bundle's own URL is unavailable (unit tests, SSR).
+  return typeof __PET_BUILD_INFO_URL__ === 'string' ? __PET_BUILD_INFO_URL__ : '/build-info.json';
 }
 
 const POLL_MS = 60_000;
@@ -136,13 +159,15 @@ export function useBuildWatcher(enabled = true): BuildWatch {
 
 /** Small, unobtrusive build stamp — the answer to "which build am I looking at?" */
 export function BuildStamp({ className = '' }: { className?: string }) {
+  const apiBase = useApiBase();
   const built = BUILD.builtAt && BUILD.builtAt !== FALLBACK.builtAt ? new Date(BUILD.builtAt) : null;
   return (
     <p
       className={`text-[10px] leading-tight text-slate-400 ${className}`}
-      title={`Build ${BUILD.buildId}\nBuilt ${built ? built.toLocaleString() : 'unknown'}${BUILD.commit ? `\nCommit ${BUILD.commit}` : ''}`}
+      title={`Build ${BUILD.buildId}\nBuilt ${built ? built.toLocaleString() : 'unknown'}${BUILD.commit ? `\nCommit ${BUILD.commit}` : ''}${apiBase ? `\nServer ${apiBase}` : '\nServer same-origin'}`}
     >
       v{BUILD.version} · build {BUILD.buildId}
+      {apiBase ? ` · ${apiBaseHost(apiBase)}` : ''}
     </p>
   );
 }
@@ -166,25 +191,3 @@ export function UpdateBanner({ watch }: { watch: BuildWatch }) {
     </div>
   );
 }
-
-/**
- * Shown only by the static preview build (vite.pet-vercel.config.ts).
- *
- * The PET platform is a client for a server that lives on the Trust's machine
- * (Express + SQLite, docs/PET/13). A static host such as Vercel can serve the
- * interface but never that server, so signing in here is impossible — and the
- * app says so in one line instead of letting the login form fail with a
- * generic network error that looks like a bug.
- */
-export function StaticPreviewNotice() {
-  if (!STATIC_PREVIEW) return null;
-  return (
-    <div className="sticky top-0 z-50 bg-pet-900 px-4 py-2 text-center text-[11px] leading-snug text-pet-100">
-      <strong className="font-bold text-white">Interface preview only.</strong>{' '}
-      The PET data server runs on the Trust&apos;s office PC, not on this host — sign-in is
-      unavailable until this build points at it.
-    </div>
-  );
-}
-
-
