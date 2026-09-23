@@ -4,8 +4,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { petTasks, petMe, petStudents, petSchools, getPetUser, PetApiFailure } from '../../../src/services/petApi';
-import type { PetTask, TaskStatus } from '../../../src/types/pet';
+import { petTasks, petMe, petStudents, petSchools, getPetUser, PetApiFailure } from '../services/petApi';
+import type { PetTask, TaskStatus } from '../types/pet';
 import { Badge, Card, EmptyState, Field, Modal, Spinner, taskStatusLabel } from '../ui';
 
 const NEXT_ACTIONS: Record<string, TaskStatus[]> = {

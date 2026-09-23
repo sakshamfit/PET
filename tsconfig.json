@@ -6,17 +6,13 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
-    "allowJs": true,
     "jsx": "react-jsx",
-    "paths": {
-      "@/*": ["./*"],
-      "@pet/*": ["./pet-web/src/*"],
-      "@shared/*": ["./src/*"]
-    },
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "strict": false
+    "paths": {
+      "@pet/*": ["./pet-web/src/*"]
+    }
   },
-  "include": ["pet-web/src", "src", "vite.config.ts"],
+  "include": ["pet-web/src", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

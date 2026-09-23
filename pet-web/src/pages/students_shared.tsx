@@ -6,10 +6,10 @@
  */
 
 import { useEffect, useState } from 'react';
-import { petStudents, petSchools, PetApiFailure } from '../../../src/services/petApi';
-import type { DuplicateCandidate, PetSchool, StudentRegistrationInput } from '../../../src/types/pet';
+import { petStudents, petSchools, PetApiFailure } from '../services/petApi';
+import type { DuplicateCandidate, PetSchool, StudentRegistrationInput } from '../types/pet';
 import { Field, Badge } from '../ui';
-import { enqueue } from '../../../src/services/petSyncQueue';
+import { enqueue } from '../services/petSyncQueue';
 
 export function RegisterStudentForm({ visitId = null, defaultSchoolId = null, onDone }: {
   visitId?: string | null;

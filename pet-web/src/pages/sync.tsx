@@ -4,8 +4,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { onSyncQueueChange, pushQueue, queueSummary, requeue, discard, installAutoSync, QueueSummary } from '../../../src/services/petSyncQueue';
-import { getAccessToken } from '../../../src/services/petApi';
+import { onSyncQueueChange, pushQueue, queueSummary, requeue, discard, installAutoSync, QueueSummary } from '../services/petSyncQueue';
+import { getAccessToken } from '../services/petApi';
 import { Badge, Modal } from '../ui';
 
 export function useAutoSync(enabled: boolean) {

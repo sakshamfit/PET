@@ -4,8 +4,8 @@
  */
 
 import { useState } from 'react';
-import { apiBaseHost } from '../../../src/services/petApiBase';
-import { petAuth, PetApiFailure } from '../../../src/services/petApi';
+import { apiBaseHost } from '../services/petApiBase';
+import { petAuth, PetApiFailure } from '../services/petApi';
 import { Field } from '../ui';
 import { BuildStamp, HOSTED_STATIC } from '../build';
 import { ServerConnection } from '../connect';

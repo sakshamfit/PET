@@ -5,8 +5,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { petReports } from '../../../src/services/petApi';
-import type { AdminDashboard } from '../../../src/types/pet';
+import { petReports } from '../services/petApi';
+import type { AdminDashboard } from '../types/pet';
 import { Badge, Card, EmptyState, Spinner, StatCard, studentStatusTone, taskStatusLabel } from '../ui';
 
 export function AdminDashboardPage({ navigate }: { navigate: (r: string) => void }) {

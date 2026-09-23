@@ -18,7 +18,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { healthUrlFor, normalizeApiBase } from '../../src/services/petApiBase';
+import { healthUrlFor, normalizeApiBase } from './services/petApiBase';
 
 const STORAGE_KEY = 'pet.apiBase';
 const CONFIG_ELEMENT_ID = 'pet-runtime-config';

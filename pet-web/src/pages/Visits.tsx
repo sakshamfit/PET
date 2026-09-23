@@ -4,8 +4,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { petVisits, PetApiFailure } from '../../../src/services/petApi';
-import type { FieldVisit, FieldMedia, PetStudent, PetTask } from '../../../src/types/pet';
+import { petVisits, PetApiFailure } from '../services/petApi';
+import type { FieldVisit, FieldMedia, PetStudent, PetTask } from '../types/pet';
 import { Badge, Card, EmptyState, Field, Modal, Spinner } from '../ui';
 import { RegisterStudentForm } from './students_shared';
 

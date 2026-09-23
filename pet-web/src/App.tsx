@@ -27,7 +27,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { getPetUser, onPetAuthChange, petAuth, restoreSession } from '../../src/services/petApi';
+import { getPetUser, onPetAuthChange, petAuth, restoreSession } from './services/petApi';
 import { LoginPage } from './pages/Login';
 import { EmployeeDashboard } from './pages/EmployeeDashboard';
 import { AdminDashboardPage } from './pages/AdminDashboard';

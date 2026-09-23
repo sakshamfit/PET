@@ -8,8 +8,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { getPetUser, PetApiFailure, petEmployees } from '../../../src/services/petApi';
-import type { PetUser } from '../../../src/types/pet';
+import { getPetUser, PetApiFailure, petEmployees } from '../services/petApi';
+import type { PetUser } from '../types/pet';
 import { Badge, Card, EmptyState, Field, Modal, Spinner } from '../ui';
 
 type StatusFilter = '' | 'ACTIVE' | 'DISABLED';

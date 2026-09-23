@@ -6,8 +6,8 @@
 import { useEffect, useState } from 'react';
 import {
   petAttendance, petMe, petVisits, petSchools, PetApiFailure,
-} from '../../../src/services/petApi';
-import type { EmployeeAttendance, FieldVisit, PetSchool, PetTask } from '../../../src/types/pet';
+} from '../services/petApi';
+import type { EmployeeAttendance, FieldVisit, PetSchool, PetTask } from '../types/pet';
 import { Badge, Card, EmptyState, Modal, Spinner, taskStatusLabel, Field } from '../ui';
 import { RegisterStudentForm } from './students_shared';
 import { SyncBadge } from './sync';

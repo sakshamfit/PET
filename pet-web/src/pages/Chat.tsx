@@ -4,8 +4,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { petChat, petMe, petStudents, getPetUser, PetApiFailure } from '../../../src/services/petApi';
-import type { ChatMessage, Conversation } from '../../../src/types/pet';
+import { petChat, petMe, petStudents, getPetUser, PetApiFailure } from '../services/petApi';
+import type { ChatMessage, Conversation } from '../types/pet';
 import { Badge, Card, EmptyState, Spinner } from '../ui';
 
 export function ChatPage() {

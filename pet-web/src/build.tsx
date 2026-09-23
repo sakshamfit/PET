@@ -17,7 +17,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { apiBaseHost } from '../../src/services/petApiBase';
+import { apiBaseHost } from './services/petApiBase';
 import { useApiBase } from './runtime';
 
 export type PetBuildInfo = {

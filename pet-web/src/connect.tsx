@@ -12,7 +12,7 @@
  */
 
 import { useState } from 'react';
-import { apiBaseHost } from '../../src/services/petApiBase';
+import { apiBaseHost } from './services/petApiBase';
 import { HOSTED_STATIC } from './build';
 import { probeServer, setApiBase, useApiBase } from './runtime';
 
