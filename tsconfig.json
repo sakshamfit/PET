@@ -1,42 +1,22 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
     "module": "ESNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
-    "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"],
+      "@pet/*": ["./pet-web/src/*"],
+      "@shared/*": ["./src/*"]
     },
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "strict": false
   },
-  "include": [
-    "src",
-    "admin/src",
-    "pet-web/src",
-    "vite.config.ts",
-    "vite.admin.config.ts",
-    "vite.pet.config.ts",
-    "vite.pet-vercel.config.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "server",
-    "electron",
-    "release"
-  ]
+  "include": ["pet-web/src", "src", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }

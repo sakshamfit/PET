@@ -1,25 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "buildCommand": "npm run build:vercel",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "build": {
-    "env": {
-      "NODE_VERSION": "22"
-    }
-  },
-  "redirects": [
-    {
-      "source": "/app",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/app/:path*",
-      "destination": "/:path*",
-      "permanent": true
-    }
-  ],
+  "installCommand": "npm ci",
   "headers": [
     {
       "source": "/",
@@ -30,28 +14,10 @@
       ]
     },
     {
-      "source": "/index.html",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, must-revalidate" },
-        { "key": "CDN-Cache-Control", "value": "no-store" },
-        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
-      ]
-    },
-    {
       "source": "/build-info.json",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, must-revalidate" },
-        { "key": "CDN-Cache-Control", "value": "no-store" },
-        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
       ]
-    },
-    {
-      "source": "/manifest.webmanifest",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
-    },
-    {
-      "source": "/pet-icon.svg",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     },
     {
       "source": "/assets/(.*)",
